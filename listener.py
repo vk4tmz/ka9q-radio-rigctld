@@ -43,6 +43,14 @@ class Ka9qRadioStatusListener():
         # Create the socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+         # Allow multiple processes to bind to the same address/port
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Optional: Enable SO_REUSEPORT for potentially better load balancing
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        except AttributeError:
+            print("SO_REUSEPORT not available on this system.")
+
         # Bind to the server address
         sock.bind(server_address)
 
@@ -51,6 +59,7 @@ class Ka9qRadioStatusListener():
         group = socket.inet_aton(self.mcast_group_ip)
         mreq = struct.pack('4sL', group, socket.INADDR_ANY)
         sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
+    
 
         return sock
 
@@ -66,6 +75,7 @@ class Ka9qRadioStatusListener():
                     stat = parsePacket(data)
 
                     if (StatusType.OUTPUT_SSRC in stat):
+                        # print(f"Packet: [{data.hex()}]")
 
                         ssrc = stat[StatusType.OUTPUT_SSRC]
 
@@ -99,7 +109,11 @@ def main():
     print(f"Ka9qRadioStatusListener() - Handler has been started, sleeping...")
     try:
         while (True):
-            time.sleep(0.1)
+            time.sleep(0.5)
+            if (len(rs.status) > 0):
+                print(rs.status[9999991])
+            else:
+                print("No Status Info....")
     finally:
         rs.stopHandler()
 

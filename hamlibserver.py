@@ -15,6 +15,7 @@ import time
 from listener import Ka9qRadioStatusListener
 from control import Ka9qRadioControl
 from status  import StatusType
+from typing import Any
 
 DEFAULT_HAMLIB_HOST = 'localhost'
 DEFAULT_HAMLIB_PORT = 4575
@@ -273,11 +274,22 @@ class HamlibServer:
         self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
 
     def registerSignalHandlers(self):
-
-        # Setting the handler for SIGINT
         signal.signal(signal.SIGINT, self.handle_signal)
         signal.signal(signal.SIGTERM, self.handle_signal)
         signal.signal(signal.SIGQUIT, self.handle_signal)
+
+    def getStatus(self) -> dict[StatusType, Any] | None:
+        if (len(self.ka9q_rs.status) > 0) and (self.ssrc in self.ka9q_rs.status):
+            return self.ka9q_rs.status[self.ssrc]
+        
+        return None
+
+    def getRtpMcastSocket(self):
+        s = self.getStatus()
+        if (s and (StatusType.OUTPUT_DATA_DEST_SOCKET in s)):
+            return s[StatusType.OUTPUT_DATA_DEST_SOCKET]
+        
+        return None
 
     def getFreq(self) -> float:
         # TODO: Do we move this to be updated using Events ?
@@ -372,6 +384,6 @@ class HamlibServer:
 
 if __name__ == "__main__":
     try:
-        HamlibServer('localhost', DEFAULT_HAMLIB_PORT).listen()
+        HamlibServer(mcast_group='hf.local', ssrc=9999991, freq_hz=7078000, mode='usb', host='localhost',port=DEFAULT_HAMLIB_PORT).listen()
     except KeyboardInterrupt:
         sys.exit(0)
