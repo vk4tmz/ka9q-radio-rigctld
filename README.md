@@ -33,7 +33,7 @@ pactl list short sinks
 
 While my project will spin a thread up to handle this, its good to explain how to do it manually and some consideration.
 
-**NOTE** - if you simply after a way to just simple listen to KA9Q-Radio channels / sources you can simply use the provide command line text based UI utility '[monitor](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/monitor.md)'
+**NOTE** - if you're simply after a way to just simple listen to KA9Q-Radio channels / sources you can simply use the provide command line text based UI utility '[monitor](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/monitor.md)'
 
 The following example is 40m FT8, which KA9Q-Radio has automatically assigned a SSRC ID of 7074. Depending on your channel settings you will need to alter the audio sample rate for the KA9Q-Radio stream.  In this example its 12 Khz, single channel and format of S16_LE.
 
