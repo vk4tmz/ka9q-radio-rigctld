@@ -106,7 +106,7 @@ Obviously you can spin multiple instance of this command, but please ensure to c
 
 ### Back ground Audio Stream
 
-I did not want to reimplement the audio streaming / sync handling logic that the existing provide command line provided with KA9Q-Radio perfect take cares of called '[pcmrecord](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/pcmrecord.md)'.  But it does mean we need my script needs to launch this application with appropriate parameters and when application closes ensure this thread and any child process are terminated and cleaned up.
+I did not want to reimplement the audio streaming / sync handling logic that the existing command line utilised provided with KA9Q-Radio perfect take cares of called '[pcmrecord](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/pcmrecord.md)'.  But it does mean my script needs to launch this application with appropriate parameters and when application closes ensure this thread and any child process are terminated and cleaned up.
 
 
 ## Final Note
