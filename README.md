@@ -31,7 +31,7 @@ pactl list short sinks
 
 ### Streaming audio from KA9Q-Radio to Audio Card
 
-While my project will spin a thread up to handle this, its good to explain how to do it manually and some consideration.
+While my project will spin a thread up to handle this, it's good to explain how to do it manually and some consideration.
 
 **NOTE** - if you're simply after a way to just simple listen to KA9Q-Radio channels / sources you can simply use the provide command line text based UI utility '[monitor](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/monitor.md)'
 
@@ -46,7 +46,7 @@ pcmrecord -c -r -S 7074 ft8-pcm.local | aplay -f S16_LE -r 12000 -c 1
 To stream this audio to a the newly created pulse virutal audio sink we utilise linux audio utility '[sox](https://linux.die.net/man/1/sox)' to convert from one format to another.  In our case from 12khz S16_LE to pulseaudio:
 
 ```
-./pcmrecord -S 7074 ft8-pcm.local | sox -t raw  -r 12000 -c 1 -b 16 -e signed -L - -t pulseaudio virtual_card_01
+pcmrecord -c -r -S 7074 ft8-pcm.local | sox -t raw  -r 12000 -c 1 -b 16 -e signed -L - -t pulseaudio virtual_card_01
 ```
 
 With this running you can now spin up your application of choice (eg WSTJX, JS8Call Fldigi etc) and select the appropriate audio device. 
