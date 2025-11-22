@@ -124,7 +124,7 @@ I did not want to reimplement the audio streaming / sync handling logic that the
 
 ### KA9Q-Radio Multicast
 
-KA9Q-Radio transmits audio and status data packet as well sa controls each channel source via multicast protocol.
+KA9Q-Radio transmits audio and status data packet as well as controls each channel source via multicast protocol.
 
 I've implemented a couple of little helper classes to help out with this that hopefully will help others:
   - **status.py** - Encoding and Decoding of the values recieved via status packets and or sent via control packets.
@@ -135,5 +135,18 @@ I've implemented a couple of little helper classes to help out with this that ho
 ## Final Note
 
 I hope this project helps others out. For me I wanted to monitor WEFAX while utiling FLDigi and was getting annoying having to ensure I manually started the audio stream, and changing the frequency via 'control'. My previous experience with how usefuly Hamlib RigCtl is, it was a no brainer, so here we are.
+
+I can now use FLDigi UI to change the frequency and or even quicker via the Hamlib command line utility called '[rigctl](https://manpages.ubuntu.com/manpages/xenial/man1/rigctl.1.html)'
+
+```
+ rigctl -m 2 -r localhost:4575
+```
+
+I can frequency and mode change commands such as change to 10Mhz WWV:
+
+```
+F 10000000
+M AM 3000
+```
 
 Well that's all folks! 
