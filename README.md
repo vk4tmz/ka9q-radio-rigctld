@@ -108,6 +108,15 @@ Obviously you can spin multiple instance of this command, but please ensure to c
 
 I did not want to reimplement the audio streaming / sync handling logic that the existing command line utilised provided with KA9Q-Radio perfect take cares of called '[pcmrecord](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/pcmrecord.md)'.  But it does mean my script needs to launch this application with appropriate parameters and when application closes ensure this thread and any child process are terminated and cleaned up.
 
+### KA9Q-Radio Multicast
+
+KA9Q-Radio transmits audio and status data packet as well sa controls each channel source via multicast protocol.
+
+I've implemented a couple of little helper classes to help out with this that hopefully will help others:
+  - **status.py** - Encoding and Decoding of the values recieved via status packets and or sent via control packets.
+  - **control.py** - Handles the encoding of command to set the frequency and mode for the specified SSRC ID and Multicast Group Name
+  - **resolver.py** - using Zeroconf library will resolve multicase group name to a multicase ip via discover means
+  - **discover.py** - using Zeroconf library will monitor multicase packets to build a list of ServiceInfo.
 
 ## Final Note
 
