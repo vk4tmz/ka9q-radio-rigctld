@@ -111,6 +111,6 @@ I did not want to reimplement the audio streaming / sync handling logic that the
 
 ## Final Note
 
-I hope this project helps others out.   For me was I wanted to monitor WEFAX and util FLDigi and was getting annoying having to ensure I start the audio stream, and changing the frequency via 'control'. Obviously experienced with how usefuly Hamlib RigCtl is it was a no brainer, so here we are.
+I hope this project helps others out. For me I wanted to monitor WEFAX while utiling FLDigi and was getting annoying having to ensure I manually started the audio stream, and changing the frequency via 'control'. My previous experience with how usefuly Hamlib RigCtl is, it was a no brainer, so here we are.
 
 Well that's all folks! 
