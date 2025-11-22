@@ -64,6 +64,20 @@ You can utilise the KA9Q-Radio '[control](https://github.com/ka9q/ka9q-radio/blo
 
 ## Using ka9q_vfo_streamer
 
+### Environment and Dependencies
+
+```
+https://github.com/vk4tmz/ka9q-radio-rigctld.git
+cd ka9q-radio-rigctld
+
+python3 -m venv env 
+source ./env/bin/activate
+
+pip install zeroconf psutil pyaudio
+
+```
+
+### Usage
 ```
 usage: ka9q_vfo_streamer.py [-h] [-L] [-ad AUDIO_DEVICE] [-ar {11025,12000,22050,44100,48000}] [--host HOST] [--port PORT]
                             [mcast_group] [ssrc] [freq_hz] [{lsb,usb,cwl,cwu,am,sam,dsb,amsq,fm,nfm,wfm,pm,npm,wpm,iq,ame,wspr,spectrum}]
