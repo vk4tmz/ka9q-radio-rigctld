@@ -12,6 +12,7 @@ import sys
 import threading
 import time
 
+from enum import Enum
 from listener import Ka9qRadioStatusListener
 from control import Ka9qRadioControl
 from status  import StatusType
@@ -32,11 +33,12 @@ DEFAULT_MODE = 'usb'
 # This is not a real hardware server.  It is meant as sample code to show how to implement the protocol
 # in SDR control software.  You can test it with "rigctl -m 2 -r localhost:4575".
 
-# SoftRock "dump_state"
-dump = """0
+# See "http://james.ahlstrom.name/hamlibserver.py" for further explanation of this
+# "dump_state"
+dump = """ 0
 2
-2
-800000.000000 53700000.000000 0x4 -1 -1 0x1 0x0
+0
+50000.000000 30000000.000000 0x4 -1 -1 0x1 0x0
 0 0 0 0 0 0 0
 0 0 0 0 0 0 0
 0x4 1
@@ -55,6 +57,15 @@ dump = """0
 0x0
 0x0
 """
+
+
+class RigLockMode(Enum):
+    RIG_LOCK_MODE_OFF = 0     # Lock mode is off
+    RIG_LOCK_MODE_TX  = 1     # Transmitter locked, typically PTT disabled
+    RIG_LOCK_MODE_RX  = 2     # Receiver locked
+    RIG_LOCK_MODE_VFO = 4     # VFO/Frequency adjustments locked
+    RIG_LOCK_MODE_MEM = 8     # Memory channels locked
+    RIG_LOCK_MODE_PANEL = 16  # Front panel controls locked
 
 class HamlibHandler:
 
@@ -84,8 +95,10 @@ class HamlibHandler:
         h['get_mode'] = self.GetMode
         h['set_mode'] = self.SetMode
         h['get_vfo'] = self.GetVfo
+        h['set_vfo'] = self.SetVfo
         h['get_ptt'] = self.GetPtt
         h['set_ptt'] = self.SetPtt
+        h['get_lock_mode'] = self.GetLockMode
 
         h['chk_vfo'] = self.ChkVfo
         h['get_powerstat'] = self.GetPowerStatus
@@ -121,6 +134,7 @@ class HamlibHandler:
         self.Reply(-1)
 
     def UnImplemented(self):  # Command not implemented
+        self.log.warning(f"Command not implemented.  CMD: [{self.cmd}]  PARAMS: [{self.params}]")
         self.Reply(-4)
 
     def ErrProtocol(self):  # Protocol error
@@ -154,8 +168,7 @@ class HamlibHandler:
             args = cmd[1:].split()
             self.cmd = args[0]
             self.params = args[1:]
-            self.log.debug(f"CMD: [{self.cmd}] Params: [{self.params}]")
-            self.Handlers.get(self.cmd, self.UnImplemented)()
+            self.processCommand()
         else:						# single-letter command
             self.params = cmd[1:].strip()
             cmd = cmd[0:1]
@@ -170,8 +183,12 @@ class HamlibHandler:
                     self.cmd = 'set_' + t
                 else:
                     self.cmd = 'get_' + t
-                self.Handlers.get(self.cmd, self.UnImplemented)()
+                self.processCommand()
         return 1
+
+    def processCommand(self):
+        self.log.debug(f"CMD: [{self.cmd}] Params: [{self.params}]")
+        self.Handlers.get(self.cmd, self.UnImplemented)()
 
     # These are the handlers for each request
 
@@ -208,13 +225,20 @@ class HamlibHandler:
         self.Reply('CHKVFO', self.app.enableVfoMode, 0)
 
     def GetPowerStatus(self):
-        # self.Reply('Power Status', str(self.app.powerStatus), 0)
-        # self.Reply('get_powerstat', self.app.powerStatus, 0)
-        self.Reply(self.app.powerStatus, 0)
-        # self.Reply(0)
+        self.Reply('powerstat', self.app.powerStatus, 0)
+
 
     def GetVfo(self):
         self.Reply('VFO', self.app.vfo, 0)
+
+    def SetVfo(self):
+        try:
+            x = self.params
+            self.Reply(0)
+        except:
+            self.ErrParam()
+        else:
+            self.app.vfo = x
 
     def GetPtt(self):
         self.Reply('PTT', self.app.ptt, 0)
@@ -231,6 +255,10 @@ class HamlibHandler:
             else:
                 self.app.ptt = 0
 
+    def GetLockMode(self):
+        self.Reply(self.app.lockModeState)
+        # self.Reply('lock mode', self.app.lockModeState, 0)
+
 class HamlibServer:
 
     log: logging.Logger
@@ -245,6 +273,16 @@ class HamlibServer:
     hamlib_socket: socket.socket
     serverHandlerRunning: bool
 
+    # Radio State/Value
+    freq: float
+    mode: str
+    bandwidth: int
+    vfo: str          # Active VFO
+    ptt: int
+    enableVfoMode: int
+    powerStatus: int
+    lockModeState: int
+
     def __init__(self, mcast_group:str, ssrc: int, freq_hz:int, mode:str, 
                  host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT):
         self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))
@@ -253,6 +291,7 @@ class HamlibServer:
         self.port = port
 
         self.registerSignalHandlers()
+        self.serverHandlerRunning = False
 
         self.ssrc = ssrc
         self.ka9q_rc = Ka9qRadioControl(mcast_group)
@@ -269,6 +308,7 @@ class HamlibServer:
         self.ptt = 0
         self.enableVfoMode = 0
         self.powerStatus = 1    # TODO: always on for now, but possible monitor MCAST for data
+        self.lockModeState = RigLockMode.RIG_LOCK_MODE_OFF.value
         
         # update the VFO with the specified initial Freq and Mode
         self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
@@ -294,20 +334,20 @@ class HamlibServer:
     def getFreq(self) -> float:
         # TODO: Do we move this to be updated using Events ?
         # TODO: Need to handle if SSRC not available 
-        self.freq = self.ka9q_rs.status[DEFAULT_SSRC_ID][StatusType.RADIO_FREQUENCY]
+        self.freq = self.ka9q_rs.status[self.ssrc][StatusType.RADIO_FREQUENCY]
         self.log.debug(f"GetFreq(): [{self.freq}]")
         return self.freq
 
     def setFreq(self, x: float):
         self.freq = x
 
-        self.ka9q_rc.control_set_frequency(self.freq, self.mode, DEFAULT_SSRC_ID)
+        self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
         self.log.debug(f"SetFreq: [{x}]")
 
     def getMode(self) -> str:
         # TODO: Do we move this to be updated using Events ?
         # TODO: Need to handle if SSRC not available 
-        self.mode = self.ka9q_rs.status[DEFAULT_SSRC_ID][StatusType.PRESET].upper()
+        self.mode = self.ka9q_rs.status[self.ssrc][StatusType.PRESET].upper()
         self.log.debug(f"GetMode(): [{self.mode}]")
         return self.mode
 
@@ -315,7 +355,7 @@ class HamlibServer:
         self.mode = mode
         self.bandwidth = bw
 
-        self.ka9q_rc.control_set_frequency(self.freq, self.mode, DEFAULT_SSRC_ID)
+        self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
         self.log.debug(f"SetMode: [{self.mode}]  Bw: [{self.bandwidth}]")
 
     def bind(self):

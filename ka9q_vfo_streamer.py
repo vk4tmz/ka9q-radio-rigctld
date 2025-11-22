@@ -15,8 +15,8 @@ from status import StatusType
 
 # Configure basic logging to a file and the console
 logging.basicConfig(
-    # level=logging.INFO,  # Set the minimum logging level to INFO
-    level=logging.DEBUG,  # Set the minimum logging level to INFO    
+    level=logging.INFO,  # Set the minimum logging level to INFO
+    # level=logging.DEBUG,  # Set the minimum logging level to INFO    
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s',
     handlers=[
         logging.FileHandler("ka9q-vfo-streamer.log"),  # Log to a file
@@ -37,12 +37,12 @@ class Ka9qVfoStreamer():
     
     hls: HamlibServer
 
-    audio_device: int
+    audio_device: str
     audio_rate: int
     audioProcess: subprocess.Popen
 
     def __init__(self, mcast_group:str, ssrc: int, freq_hz:int, mode:str, 
-                 audio_device:int, audio_rate:int, 
+                 audio_device:str, audio_rate:int, 
                  host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT) -> None:
         
         self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))        
@@ -58,6 +58,11 @@ class Ka9qVfoStreamer():
 
         # Register our handlers
         self.registerSignalHandlers()
+
+        # allow a bit of time for thread to start
+        time.sleep(0.250)
+        if (not self.hls.serverHandlerRunning):
+            raise Exception("Hamlib Server Failed to start.")
 
         self.log.info("Waiting for VFO Status information...")
         while (len(self.hls.ka9q_rs.status) < 1):
@@ -75,26 +80,20 @@ class Ka9qVfoStreamer():
             sys.exit(-1)
 
 
-        print("Main thread joining HLS and waiting!!!!!!!")
-        self.hls.serverHandlerThread.join()
+        print("Ready....")
+        self.hls.serverHandlerThread.join()  
 
     def startAudioStream(self):
 
-        # Example: Running a simple Python script in the background
-        # Ensure 'background_script.py' exists with some print statements
-        # pcmrecord -c -r -S 9999991 hf-pcm.local | sox -t raw -c 1 -r 12000 -b 16 -e sign - -t pulseaudio virtual_card_01
-        # ./pcmrecord_to_virtualcard.sh 'hf-pcm.local' 9999991 12000 virtual_card_01
-        # command = ["./pcmrecord_to_virtualcard.sh", self.rtp_mcast_group_ip, str(self.ssrc), str(self.audio_rate), "virtual_card_01"]
         # command = ["./pcmrecord_to_virtualcard.sh", 'hf-pcm.local', str(self.ssrc), str(self.audio_rate), "virtual_card_01"]
-        command = ["./pcmrecord_to_virtualcard.sh", '239.206.102.211', str(self.ssrc), str(self.audio_rate), "virtual_card_01"]
+        # command = ["./pcmrecord_to_virtualcard.sh", '239.206.102.211', str(self.ssrc), str(self.audio_rate), "virtual_card_01"]
+        command = ["./pcmrecord_to_virtualcard.sh", self.rtp_mcast_group_ip, str(self.ssrc), str(self.audio_rate), self.audio_device]
 
-        # Detach the process from the current terminal (Unix-like systems)
-        # This creates a new session and process group for the child process.
         self.audioProcess = subprocess.Popen(command, preexec_fn=os.setsid)
         # self.audioProcess = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
 
-        print(f"Background process started with PID: {self.audioProcess.pid}")
-        # The main script can continue its work without waiting for the background process
+        print(f"Audio streaming process started with PID: {self.audioProcess.pid}")
+        
 
     def stopAudioStream(self):
         self.log.info(f"Sending SIGKILL (signal 9) to audio stream process with PID: {self.audioProcess.pid}")
@@ -140,14 +139,36 @@ class Ka9qVfoStreamer():
 
 # ================ Main routine ================================================
 
+def listAudioDevices():
+    PA = pyaudio.PyAudio()
+    try:
+        ndev = PA.get_device_count()
+
+        n = 0
+        ai = ""
+        ao = ""
+        while n < ndev:
+            s = PA.get_device_info_by_index(n)
+            # print n, s
+            if int(s['maxInputChannels']) > 0:
+                ai += f"{s['index']}: [{s['name']}]\n"
+            if int(s['maxOutputChannels']) > 0:
+                ao += f"{s['index']}: [{s['name']}]\nALL:[{s}]\n"
+            n = n + 1
+
+        print(f"Located {n} audio output devices:\n{ao}")
+    finally:
+        PA.terminate()
+
 def processArgs(parser):
 
     parser = argparse.ArgumentParser(description=APPTitle)
-    parser.add_argument("mcast_group", type=str, default='hf.local', help="Multicast group name/ip for VFO control.")
-    parser.add_argument("ssrc", type=int, default=9999991, help="SSRC is to create / reuse for VFO control.")
-    parser.add_argument("freq_hz", type=int, default=70740000, help="Initial frequency (Hz) which vfo will be set to.")
-    parser.add_argument("mode", type=str, default='usb', choices=KA9Q_PRESETS, help="Initial mode which vfo will be set to.")
-    parser.add_argument("audio_device", type=int, help="Alsa device number to stream vfo RTP to. Will display list of available auido devices if value not provided and/or not a valid device number.")
+    parser.add_argument("mcast_group", type=str, nargs='?', default='hf.local', help="Multicast group name/ip for VFO control.")
+    parser.add_argument("ssrc", type=int, nargs='?', default=9999991, help="SSRC is to create / reuse for VFO control.")
+    parser.add_argument("freq_hz", type=int, nargs='?', default=70740000, help="Initial frequency (Hz) which vfo will be set to.")
+    parser.add_argument("mode", type=str, nargs='?', default='usb', choices=KA9Q_PRESETS, help="Initial mode which vfo will be set to.")
+    parser.add_argument("-L", "--list_audio_devices", action='store_true', help="List available audio devices.")
+    parser.add_argument("-ad", "--audio_device", type=str, help="Audio device name to stream vfo RTP to. ")
     parser.add_argument("-ar", "--audio-rate", type=int, default=12000, choices=[11025, 12000, 22050, 44100, 48000], help="Audio sampling rate.")
     parser.add_argument("--host", type=str, default=DEFAULT_HAMLIB_HOST, help="Host name/ip to bind Hamlib Rigctld to.")
     parser.add_argument("--port", type=int, default=DEFAULT_HAMLIB_PORT, help="Port to bind use for Hamlib Rigctld.")
@@ -162,7 +183,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=APPTitle)
     args = processArgs(parser)
 
-    vfo = Ka9qVfoStreamer(mcast_group=args.mcast_group, ssrc=args.ssrc, freq_hz=args.freq_hz, mode=args.mode,
-                          audio_device=args.audio_device, audio_rate=args.audio_rate,
-                          host=args.host, port=args.port)
+    if (args.list_audio_devices):
+        listAudioDevices()
+    else:
+        vfo = Ka9qVfoStreamer(mcast_group=args.mcast_group, ssrc=args.ssrc, freq_hz=args.freq_hz, mode=args.mode,
+                            audio_device=args.audio_device, audio_rate=args.audio_rate,
+                            host=args.host, port=args.port)
 

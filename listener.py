@@ -1,4 +1,5 @@
 
+import logging
 import socket
 import struct
 import threading
@@ -11,6 +12,8 @@ from typing import Any
 
 class Ka9qRadioStatusListener():
     
+    log: logging.Logger
+
     statusListenerHandlerRunning: bool
     statusListenerHandlerThread: threading.Thread
 
@@ -23,6 +26,8 @@ class Ka9qRadioStatusListener():
     status: dict[int, dict[StatusType, Any]]    # Key: SSRC - 
 
     def __init__(self, mcast_group:str=DEFAULT_MCAST_GROUP, ssrcFilter: list[int]=[]):
+        self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))
+
         self.mcast_group = mcast_group
         self.ssrcFilter = ssrcFilter
         self.status = {}
@@ -33,9 +38,9 @@ class Ka9qRadioStatusListener():
         else:
             raise Exception(f"Failed to resolve multicast group name: [{mcast_group}].")
 
-        self.s_in = self.listen_mcast(mcast_group)
+        self.s_in = self.listen_mcast()
 
-    def listen_mcast(self, mcast_group_ip: str) -> socket.socket:
+    def listen_mcast(self) -> socket.socket:
         
         # Recv
         server_address = ('', DEFAULT_STAT_PORT)
@@ -49,7 +54,7 @@ class Ka9qRadioStatusListener():
         try:
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         except AttributeError:
-            print("SO_REUSEPORT not available on this system.")
+            self.log.info("SO_REUSEPORT not available on this system.")
 
         # Bind to the server address
         sock.bind(server_address)
@@ -75,22 +80,21 @@ class Ka9qRadioStatusListener():
                     stat = parsePacket(data)
 
                     if (StatusType.OUTPUT_SSRC in stat):
-                        # print(f"Packet: [{data.hex()}]")
+                        #self.log.debug(f"Packet: [{data.hex()}]")
 
                         ssrc = stat[StatusType.OUTPUT_SSRC]
 
                         if (len(self.ssrcFilter) == 0) or (ssrc and ssrc in self.ssrcFilter):
                             self.status[stat[StatusType.OUTPUT_SSRC]] = stat
-                            # print(f"SSRC: [{ssrc}] Freq: [{stat[StatusType.RADIO_FREQUENCY]}]", flush=True)
-                            # print(f"SSRC: [{ssrc}] Stat: [{stat}]")
+                            self.log.debug(f"SSRC: [{ssrc}] Stat: [{stat}]")
 
                     else:
-                        print(f"WARNING! - record did not contain valid OUTPUT_SSRC value.")
+                        self.log.warning(f"Status info did not contain a valid OUTPUT_SSRC value.")
 
             except socket.timeout as e:
                 pass
             except Exception as e:
-                print(f"Ka9qRadioStatusListener() - An error occurred: {e}")
+                self.log.error(f"An error occurred: {e}")
 
     def startHandler(self):
         self.statusListenerHandlerRunning = True

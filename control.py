@@ -1,9 +1,8 @@
 
-
+import logging
 import random
 import socket
 import struct
-import time
 
 from resolver import resolve_name
 from status import StatusType, encode_double, encode_eol, encode_int, encode_str
@@ -23,12 +22,16 @@ KA9Q_PRESETS = ['lsb', 'usb', 'cwl', 'cwu',
 
 class Ka9qRadioControl():
 
+    log: logging.Logger
+
     mcast_group: str
     mcast_group_ip: str
 
     s_out: socket.socket    # Outbound mcast Socket
 
     def __init__(self, mcast_group:str=DEFAULT_MCAST_GROUP):
+        self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))
+
         self.mcast_group = mcast_group
 
         names = resolve_name(mcast_group)
@@ -37,13 +40,11 @@ class Ka9qRadioControl():
         else:
             raise Exception(f"Failed to resolve multicast group name: [{mcast_group}].")
 
-        self.s_out = self.connect_mcast(mcast_group)
+        self.s_out = self.connect_mcast()
 
 
-    def connect_mcast(self, mcast_group_ip: str) -> socket.socket:
+    def connect_mcast(self) -> socket.socket:
         
-        server_address = (mcast_group_ip, DEFAULT_STAT_PORT)
-
         # Create the socket
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -74,9 +75,8 @@ class Ka9qRadioControl():
         buf = encode_int(buf, StatusType.COMMAND_TAG, random.getrandbits(32)) # Append a command tag
         buf = encode_eol(buf)
 
-        print(f"Encoded: [{len(buf)}] bytes, sending to server... [{buf.hex()}]")
+        self.log.debug(f"Encoded: [{len(buf)}] bytes, sending to server... [{buf.hex()}]")
         self.send(buf)
-        print(f"Encoded buffer sent!")
 
     def close(self):
         if (self.s_out):
