@@ -28,6 +28,16 @@ sudo apt install pulseaudio pulseaudio-utils
 pactl load-module module-null-sink sink_name=virtual_card_01 sink_properties=device.description="Virtual-Card-1"
 pactl list short sinks
 ```
+Note: These newly created sinks are only temp and will not persist during reboot / shutdown. You need to research this yourself.
+
+#### Removing Sink
+
+When you ran the load module command above you would have been present with a module number of the newly created module / sink.  You can find this by running the list module command.
+
+```
+pactl list modules 
+pactl unload-module NNNNNNNN
+```
 
 ### Streaming audio from KA9Q-Radio to Audio Card
 
