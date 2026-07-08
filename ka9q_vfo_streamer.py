@@ -2,7 +2,6 @@
 import argparse
 import logging
 import os
-import psutil
 import pyaudio
 import signal
 import subprocess
@@ -11,7 +10,6 @@ import time
 
 from hamlibserver import HamlibServer, DEFAULT_HAMLIB_HOST, DEFAULT_HAMLIB_PORT
 from control import KA9Q_PRESETS
-from status import StatusType
 
 # Configure basic logging to a file and the console
 logging.basicConfig(
@@ -39,7 +37,7 @@ class Ka9qVfoStreamer():
 
     audio_device: str
     audio_rate: int
-    audioProcess: subprocess.Popen
+    audioProcess: subprocess.Popen | None
 
     def __init__(self, mcast_group:str, ssrc: int, freq_hz:int, mode:str, 
                  audio_device:str, audio_rate:int, 
@@ -51,13 +49,15 @@ class Ka9qVfoStreamer():
         self.ssrc = ssrc
         self.audio_device = audio_device
         self.audio_rate = audio_rate
+        self.audioProcess = None
 
         #1. Start the HamlibServer, this will sset the initial Frequency, Mode for the specifed SSRC to ensure it exists before trying to start Audio Stream
         self.hls = HamlibServer(mcast_group=args.mcast_group, ssrc=args.ssrc, freq_hz=freq_hz, mode=mode, host=args.host, port=args.port)
-        self.hls.start()
 
         # Register our handlers
         self.registerSignalHandlers()
+
+        self.hls.start()
 
         # allow a bit of time for thread to start
         time.sleep(0.250)
@@ -80,8 +80,9 @@ class Ka9qVfoStreamer():
             sys.exit(-1)
 
 
-        print("Ready....")
-        self.hls.serverHandlerThread.join()  
+        self.log.info("Ready....")
+        while self.hls.serverHandlerThread.is_alive():
+            time.sleep(0.5)
 
     def startAudioStream(self):
 
@@ -89,42 +90,61 @@ class Ka9qVfoStreamer():
         # command = ["./pcmrecord_to_virtualcard.sh", '239.206.102.211', str(self.ssrc), str(self.audio_rate), "virtual_card_01"]
         command = ["./pcmrecord_to_virtualcard.sh", self.rtp_mcast_group_ip, str(self.ssrc), str(self.audio_rate), self.audio_device]
 
-        self.audioProcess = subprocess.Popen(command, preexec_fn=os.setsid)
+        self.audioProcess = subprocess.Popen(command, start_new_session=True)
         # self.audioProcess = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid)
 
-        print(f"Audio streaming process started with PID: {self.audioProcess.pid}")
+        self.log.info(f"Audio streaming process started with PID: {self.audioProcess.pid}")
         
 
     def stopAudioStream(self):
-        self.log.info(f"Sending SIGKILL (signal 9) to audio stream process with PID: {self.audioProcess.pid}")
-        # self.audioProcess.kill()
-        # Currently running a shell script so need to whole kill process tree
-        self.killProcessTree(self.audioProcess.pid)
-
-    def killProcess(self, pid:int):
-        try:
-            os.kill(pid, 9)  # 9 is the signal number for SIGKILL
-            self.log.debug(f"SIGKILL sent to process with PID: {pid}.")
-        except ProcessLookupError:
-            self.log.error(f"Process with PID {pid} not found.")
-
-    def killProcessTree(self, pid:int, sig:int=9):
-        
-        try:
-            parent = psutil.Process(pid)
-        except psutil.NoSuchProcess:
+        if self.audioProcess is None:
+            self.log.info("No audio process to stop.")
             return
 
-        children = parent.children(recursive=True)
-        for child in children:
-            try:
-                os.kill(child.pid, sig)
-            except OSError as e:
-                self.log.error(f"Error killing child process {child.pid}: {e}")
+        if self.audioProcess.poll() is not None:
+            self.log.info("Audio process already stopped.")
+            self.audioProcess = None
+            return
+
+        pid = self.audioProcess.pid
+
         try:
-            os.kill(pid, sig)
+            pgid = os.getpgid(pid)
+
+            self.log.info(
+                f"Sending SIGTERM to audio process group {pgid}"
+            )
+
+            os.killpg(
+                pgid,
+                signal.SIGTERM
+            )
+
+            time.sleep(2)
+
+            if self.audioProcess.poll() is None:
+                self.log.warning(
+                    "Audio process group still running, sending SIGKILL."
+                )
+
+                os.killpg(
+                    pgid,
+                    signal.SIGKILL
+                )
+
+        except ProcessLookupError:
+            self.log.info(
+                "Audio process group already terminated."
+            )
+
         except OSError as e:
-            self.log.error(f"Error killing parent process {pid}: {e}")
+            self.log.error(
+                f"Error stopping audio process group: {e}"
+            )
+
+        finally:
+            self.audioProcess = None
+
 
     def registerSignalHandlers(self):
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -132,10 +152,27 @@ class Ka9qVfoStreamer():
         signal.signal(signal.SIGQUIT, self.handle_signal)
 
     def handle_signal(self, signum, frame):
-        self.log.info(f"Signal: [{signum}] received. Requesting shutdown...")
-        self.hls.stop()
-        self.stopAudioStream()
-        time.sleep(2)
+        self.log.info(
+            f"Signal: [{signum}] received. Requesting shutdown..."
+        )
+
+        try:
+            self.stopAudioStream()
+        except Exception as e:
+            self.log.error(
+                f"Error stopping audio stream: {e}"
+            )
+
+        try:
+            self.hls.stop()
+        except Exception as e:
+            self.log.error(
+                f"Error stopping Hamlib server: {e}"
+            )
+
+        self.log.info("Shutdown complete.")
+
+        os._exit(0)
 
 # ================ Main routine ================================================
 

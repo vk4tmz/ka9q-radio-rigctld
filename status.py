@@ -1,5 +1,6 @@
 
 
+import logging
 import math
 import socket
 import struct
@@ -7,6 +8,8 @@ import struct
 from collections import deque
 from enum import Enum
 from typing import Dict, Any
+
+log = logging.getLogger(__name__)
 
 
 def dB2power(x:float) -> float:
@@ -396,8 +399,9 @@ def parsePacket(p:bytes) -> dict[StatusType, Any]:
             
             continue
 
-        if (vt > 110):
-            print(f"ERROR!! Unhandled StatusType: [{vt}],  vb: [{vb}] - Skipped....")
+        if (vt >= len(StatusTypeEncoding)):
+            log.debug("Unhandled status type [%s] encountered; storing raw value [%s]", vt, vb)
+            res[vt] = vb
             continue
 
         ste = StatusTypeEncoding[vt]
