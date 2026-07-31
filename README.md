@@ -160,3 +160,47 @@ M AM 3000
 ```
 
 Well that's all folks! 
+
+---
+
+## Grouped Virtual VFO Controller
+
+The former standalone `virtual_vfo_streamer` helper is now part of this repository because it directly orchestrates `ka9q_vfo_streamer.py` instances.
+
+The controller is located at:
+
+```text
+scripts/virtual_vfo_streamer.sh
+```
+
+It loads active profiles from:
+
+```text
+~/.config/ka9q-radio/vfo_streamer/<GROUP_ID>/<GROUP_ID>.conf
+```
+
+Example profiles are provided under:
+
+```text
+examples/vfo-streamer/
+```
+
+Install the HF APRS example:
+
+```bash
+mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
+cp examples/vfo-streamer/hf_aprs.conf.example \
+  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.conf
+```
+
+Start and inspect the group:
+
+```bash
+source ~/tools/ka9q-radio/.venv/bin/activate
+scripts/virtual_vfo_streamer.sh hf_aprs start
+scripts/virtual_vfo_streamer.sh hf_aprs status
+```
+
+The script derives the repository path from its own location, so it does not depend on a hard-coded checkout directory.
+
+See `docs/ARCHITECTURE.md` and `docs/OPERATIONS.md` for details.
