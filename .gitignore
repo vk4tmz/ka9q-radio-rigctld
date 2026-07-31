@@ -212,3 +212,11 @@ ka9q-vfo-streamer.log
 vfo_pids.txt
 virtual_card_module_ids
 .group.lock
+
+# Local runtime/build artifacts
+ka9q-vfo-streamer.log
+build/
+dist/
+*.egg-info/
+__pycache__/
+*.py[cod]

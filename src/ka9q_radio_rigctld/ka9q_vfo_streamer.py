@@ -2,7 +2,6 @@
 import argparse
 import logging
 import os
-import pyaudio
 import signal
 import subprocess
 import sys
@@ -10,7 +9,7 @@ import time
 from pathlib import Path
 
 from .hamlibserver import HamlibServer, DEFAULT_HAMLIB_HOST, DEFAULT_HAMLIB_PORT
-from .control import KA9Q_PRESETS
+from ka9qradio import KA9Q_PRESETS
 
 # Configure basic logging to a file and the console
 logging.basicConfig(
@@ -66,8 +65,8 @@ class Ka9qVfoStreamer():
             raise Exception("Hamlib Server Failed to start.")
 
         self.log.info("Waiting for VFO Status information...")
-        while (len(self.hls.ka9q_rs.status) < 1):
-            time.sleep(0.1)
+        if self.hls.waitForStatus(timeout=10.0) is None:
+            raise RuntimeError(f"Timed out waiting for KA9Q status for SSRC {self.ssrc}")
 
         #2. Start the Audio Streaming form the RTP to select AudioDevice and sample rate
         sockinfo =  self.hls.getRtpMcastSocket()
@@ -179,6 +178,11 @@ class Ka9qVfoStreamer():
 # ================ Main routine ================================================
 
 def listAudioDevices():
+    try:
+        import pyaudio
+    except ImportError as exc:
+        raise RuntimeError("PyAudio is required only for --list-audio-devices") from exc
+
     PA = pyaudio.PyAudio()
     try:
         ndev = PA.get_device_count()

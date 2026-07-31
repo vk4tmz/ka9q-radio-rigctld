@@ -71,156 +71,22 @@ You can predefine your channels / sources via the KA9Q-Radio configuration. When
 
 You can utilise the KA9Q-Radio '[control](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/control.md)' command line text base UI utility to create and alter the channel / source settings  (ie frequency, mode, filters, audio output sample rate etc)
 
+## Installation and commands
 
-## Using ka9q_vfo_streamer
-
-### Environment and Dependencies
-
-```
-https://github.com/vk4tmz/ka9q-radio-rigctld.git
-cd ka9q-radio-rigctld
-
-python3 -m venv env 
-source ./env/bin/activate
-
-pip install zeroconf psutil pyaudio
-
-```
-
-### Usage
-```
-usage: ka9q_vfo_streamer.py [-h] [-L] [-ad AUDIO_DEVICE] [-ar {11025,12000,22050,44100,48000}] [--host HOST] [--port PORT]
-                            [mcast_group] [ssrc] [freq_hz] [{lsb,usb,cwl,cwu,am,sam,dsb,amsq,fm,nfm,wfm,pm,npm,wpm,iq,ame,wspr,spectrum}]
-
-KA9Q Radio VFO Streamer (with Hamlib Server)
-
-positional arguments:
-  mcast_group           Multicast group name/ip for VFO control.
-  ssrc                  SSRC is to create / reuse for VFO control.
-  freq_hz               Initial frequency (Hz) which vfo will be set to.
-  {lsb,usb,cwl,cwu,am,sam,dsb,amsq,fm,nfm,wfm,pm,npm,wpm,iq,ame,wspr,spectrum}
-                        Initial mode which vfo will be set to.
-
-options:
-  -h, --help            show this help message and exit
-  -L, --list_audio_devices
-                        List available audio devices.
-  -ad AUDIO_DEVICE, --audio_device AUDIO_DEVICE
-                        Audio device name to stream vfo RTP to.
-  -ar {11025,12000,22050,44100,48000}, --audio-rate {11025,12000,22050,44100,48000}
-                        Audio sampling rate.
-  --host HOST           Host name/ip to bind Hamlib Rigctld to.
-  --port PORT           Port to bind use for Hamlib Rigctld.
-```
-
-The following is simple example of setting up a Stream and VFO for the intended purpose of using it with WSJT-X:
-
-```
-python ka9q_vfo_streamer.py hf.local 9999991 7074000 usb -ar 12000 -ad 'virtual_card_01' --host localhost --port 4575
-```
-
-The above options are:
-  1. Selected hopefully an unused SSRCID "9999991"
-  2. Provided a initial frequecy and mode (7074khz USB)
-  3. Configured the audio output sample rate of 12khz
-  4. Specified the pulse-audio sink name 'virtual_card_01'
-  5. Interface IP/name and port to bind the Hamlib Server to.
-
-Obviously you can spin multiple instance of this command, but please ensure to change at minimum '**SSRCID**' and the '**Hamlib Server Port**'.
-
-### Back ground Audio Stream
-
-I did not want to reimplement the audio streaming / sync handling logic that the existing command line utilised provided with KA9Q-Radio perfect take cares of called '[pcmrecord](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/pcmrecord.md)'.  But it does mean my script needs to launch this application with appropriate parameters and when application closes ensure this thread and any child process are terminated and cleaned up.
-
-### KA9Q-Radio Multicast
-
-KA9Q-Radio transmits audio and status data packet as well as controls each channel source via multicast protocol.
-
-I've implemented a couple of little helper classes to help out with this that hopefully will help others:
-  - **status.py** - Encoding and Decoding of the values recieved via status packets and or sent via control packets.
-  - **control.py** - Handles the encoding of command to set the frequency and mode for the specified SSRC ID and Multicast Group Name
-  - **resolver.py** - using Zeroconf library will resolve multicase group name to a multicase ip via discover means
-  - **discover.py** - using Zeroconf library will monitor multicase packets to build a list of ServiceInfo.
-
-## Final Note
-
-I hope this project helps others out. For me I wanted to monitor WEFAX while utiling FLDigi and was getting annoying having to ensure I manually started the audio stream, and changing the frequency via 'control'. My previous experience with how usefuly Hamlib RigCtl is, it was a no brainer, so here we are.
-
-I can now use FLDigi UI to change the frequency and or even quicker via the Hamlib command line utility called '[rigctl](https://manpages.ubuntu.com/manpages/xenial/man1/rigctl.1.html)'
-
-```
- rigctl -m 2 -r localhost:4575
-```
-
-I can frequency and mode change commands such as change to 10Mhz WWV:
-
-```
-F 10000000
-M AM 3000
-```
-
-Well that's all folks! 
-
----
-
-## Grouped Virtual VFO Controller
-
-The former standalone `virtual_vfo_streamer` helper is now part of this repository because it directly orchestrates `ka9q_vfo_streamer.py` instances.
-
-The controller is located at:
-
-```text
-scripts/virtual_vfo_streamer.sh
-```
-
-It loads active profiles from:
-
-```text
-~/.config/ka9q-radio/vfo_streamer/<GROUP_ID>/<GROUP_ID>.conf
-```
-
-Example profiles are provided under:
-
-```text
-examples/vfo-streamer/
-```
-
-Install the HF APRS example:
-
-```bash
-mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
-cp examples/vfo-streamer/hf_aprs.conf.example \
-  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.conf
-```
-
-Start and inspect the group:
+Install both projects into the shared virtual environment:
 
 ```bash
 source ~/tools/ka9q-radio/.venv/bin/activate
-scripts/virtual_vfo_streamer.sh hf_aprs start
-scripts/virtual_vfo_streamer.sh hf_aprs status
-```
-
-The script derives the repository path from its own location, so it does not depend on a hard-coded checkout directory.
-
-See `docs/ARCHITECTURE.md` and `docs/OPERATIONS.md` for details.
-
-
-## Installed commands
-
-Install the project into the shared environment:
-
-```bash
-source ~/tools/ka9q-radio/.venv/bin/activate
+python -m pip install -e ~/tools/ka9q-radio
 python -m pip install -e ~/tools/ka9q-radio-rigctld
 ```
 
-The installation provides:
+Installed commands:
 
 ```text
-ka9q-vfo-streamer   Start one VFO/audio stream and Hamlib endpoint
-ka9q-rigctld        Start the Hamlib-compatible controller only
-ka9q-vfo-group      Start, stop, restart or inspect configured VFO groups
+ka9q-vfo-streamer   Start one receiver, audio stream and Hamlib endpoint
+ka9q-rigctld        Start the Hamlib-compatible endpoint only
+ka9q-vfo-group      Manage configured groups of virtual VFOs
 ```
 
 Examples:
@@ -228,7 +94,38 @@ Examples:
 ```bash
 ka9q-vfo-group hf_aprs start
 ka9q-vfo-group hf_aprs status
-ka9q-vfo-streamer hf.local 9999991 7074000 usb -ar 12000 -ad virtual_card_01 --port 4575
+
+ka9q-vfo-streamer \
+  hf.local 9999991 7074000 usb \
+  -ar 12000 -ad virtual_card_01 --port 4575
 ```
 
-The root-level Python files remain as compatibility wrappers during the transition. New automation should use the installed commands.
+## Shared KA9Q protocol package
+
+This application uses the separate `ka9q-radio` package for multicast control and status handling. It no longer carries local copies of the control encoder, status parser, resolver, discovery code or multicast implementation.
+
+`ka9q-radio-rigctld` remains responsible for:
+
+- the Hamlib TCP protocol adapter;
+- long-running single-SSRC state;
+- RTP-to-audio process lifecycle;
+- PulseAudio/PipeWire sink orchestration;
+- grouped VFO start, stop and status operations.
+
+## Group profiles
+
+Active profiles live outside Git under:
+
+```text
+~/.config/ka9q-radio/vfo_streamer/<GROUP_ID>/<GROUP_ID>.conf
+```
+
+Examples are provided in `examples/vfo-streamer/`. See `docs/ARCHITECTURE.md` and `docs/OPERATIONS.md` for the current design and commands.
+
+## Optional audio-device listing dependency
+
+The streaming runtime uses the packaged `pcmrecord`/SoX helper and does not require PyAudio. To enable `ka9q-vfo-streamer --list-audio-devices`, install the optional extra:
+
+```bash
+python -m pip install -e '~/tools/ka9q-radio-rigctld[audio-tools]'
+```

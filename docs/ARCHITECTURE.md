@@ -1,24 +1,59 @@
 # Architecture
 
+## Responsibilities
+
+`ka9q-radio-rigctld` provides the application layer around a single KA9Q-Radio receiver:
+
+- a small Hamlib-compatible `rigctld` TCP endpoint;
+- one RTP/PCM audio stream into a selected PulseAudio/PipeWire sink;
+- grouped VFO lifecycle management through `ka9q-vfo-group`.
+
+The low-level KA9Q multicast protocol is owned by the separate `ka9q-radio` package. This project imports its:
+
+- `Ka9qRadioClient` for control updates;
+- `ReceiverConfig` for receiver validation;
+- `StatusListener` for multicast status reception;
+- `StatusType` and `KA9Q_PRESETS` protocol definitions.
+
+This repository no longer maintains its own control encoder, status parser, resolver, discovery client, or multicast implementation.
+
 ## Single VFO runtime
 
-`ka9q_vfo_streamer.py` creates or reuses one KA9Q-Radio SSRC, starts the audio stream, and exposes a minimal Hamlib-compatible TCP endpoint.
+`ka9q-vfo-streamer` performs the following sequence:
+
+1. Start `HamlibServer` for one SSRC.
+2. Create or retune that receiver through `ka9q-radio`.
+3. Collect status for the same SSRC in a background listener.
+4. Read the receiver's RTP multicast destination from status.
+5. Launch the packaged `pcmrecord_to_virtualcard.sh` helper.
+6. Stream decoded PCM into the selected audio sink.
+
+The Hamlib server supports the small subset needed by applications such as JS8Call, WSJT-X and FLDigi: frequency, mode, VFO, PTT state, power state and lock-mode queries.
+
+## KA9Q integration adapter
+
+`src/ka9q_radio_rigctld/radio.py` is intentionally small. `RadioSession` adapts the reusable `ka9q-radio` request/response API to this application's long-running needs:
+
+- maintain the latest status for one SSRC;
+- apply frequency/preset changes;
+- wait for initial receiver status;
+- stop the listener thread cleanly.
+
+Protocol changes belong in `ka9q-radio`; Hamlib and audio lifecycle changes belong here.
 
 ## Group orchestration
 
-`scripts/virtual_vfo_streamer.sh` manages a named group of VFOs:
+`ka9q-vfo-group` invokes the packaged group controller, which manages a named group of VFOs:
 
 1. Load `~/.config/ka9q-radio/vfo_streamer/<group>/<group>.conf`.
 2. Create one PulseAudio/PipeWire null sink per configured channel.
-3. Start one `ka9q_vfo_streamer.py` process per channel.
+3. Start one installed `ka9q-vfo-streamer` process per channel.
 4. Record process IDs and PulseAudio module IDs beside the active profile.
-5. Stop only processes identified as KA9Q VFO streamers and unload the recorded sinks.
-
-The controller is part of this repository because it depends directly on the Python streamer's command-line interface, process identity, SSRC allocation, Hamlib port allocation, and audio-device behaviour.
+5. Stop only recognized VFO processes and unload the recorded sinks.
 
 ## Configuration boundary
 
-Repository examples live in `examples/vfo-streamer/`. Active profiles and runtime state are external:
+Repository examples live in `examples/vfo-streamer/`. Active profiles and runtime state remain external:
 
 ```text
 ~/.config/ka9q-radio/vfo_streamer/

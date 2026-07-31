@@ -1,5 +1,25 @@
 # Operations
 
+## Install
+
+Both `ka9q-radio` and this project are installed into the shared environment:
+
+```bash
+source ~/tools/ka9q-radio/.venv/bin/activate
+
+python -m pip install -e ~/tools/ka9q-radio
+python -m pip install -e ~/tools/ka9q-radio-rigctld
+```
+
+Verify the installed commands:
+
+```bash
+command -v ka9q-radio
+command -v ka9q-vfo-streamer
+command -v ka9q-rigctld
+command -v ka9q-vfo-group
+```
+
 ## Install an example profile
 
 ```bash
@@ -16,73 +36,94 @@ cp examples/vfo-streamer/vara_hf.conf.example \
   ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.conf
 ```
 
-## Commands
+## Group commands
 
-Run from any directory:
-
-```bash
-~/tools/ka9q-radio-rigctld/scripts/virtual_vfo_streamer.sh list
-~/tools/ka9q-radio-rigctld/scripts/virtual_vfo_streamer.sh hf_aprs start
-~/tools/ka9q-radio-rigctld/scripts/virtual_vfo_streamer.sh hf_aprs status
-~/tools/ka9q-radio-rigctld/scripts/virtual_vfo_streamer.sh hf_aprs stop
-```
-
-To use another configuration root:
+Run from any directory after activating the environment:
 
 ```bash
-scripts/virtual_vfo_streamer.sh --config-dir /path/to/profiles hf_aprs status
-```
-
-## Shared virtual environment
-
-The controller uses whichever `python` is active. In the current installation, activate:
-
-```bash
-source ~/tools/ka9q-radio/.venv/bin/activate
-```
-
-## tmux migration
-
-Replace the old controller directory:
-
-```text
-~/tools/ka9q-radio-misc/virtual_vfo_streamer
-```
-
-with:
-
-```text
-~/tools/ka9q-radio-rigctld/scripts
-```
-
-The command remains:
-
-```bash
-./virtual_vfo_streamer.sh <group> start
-```
-
-## Validation
-
-```bash
-bash -n scripts/virtual_vfo_streamer.sh
-python -m py_compile ka9q_vfo_streamer.py hamlibserver.py control.py listener.py resolver.py status.py
-python -m pytest
-```
-
-
-## Known pre-existing issue
-
-`multicast.py` is an unfinished experimental file and currently contains invalid Python syntax. Phase 1 does not modify or depend on it. It should be removed or repaired during the later Python refactor.
-
-
-## Installed-command operation
-
-After an editable installation into `~/tools/ka9q-radio/.venv`, use:
-
-```bash
+ka9q-vfo-group list
 ka9q-vfo-group hf_aprs start
 ka9q-vfo-group hf_aprs status
+ka9q-vfo-group hf_aprs restart
 ka9q-vfo-group hf_aprs stop
 ```
 
-Tmux launchers should call `ka9q-vfo-group` directly and no longer need a repository working directory.
+Use a different profile root when required:
+
+```bash
+ka9q-vfo-group --config-dir /path/to/profiles hf_aprs status
+```
+
+The direct script remains available for source-tree debugging only:
+
+```bash
+scripts/virtual_vfo_streamer.sh hf_aprs status
+```
+
+New tmux launchers and automation should call `ka9q-vfo-group`.
+
+## Single VFO
+
+```bash
+ka9q-vfo-streamer \
+  hf.local \
+  9999991 \
+  7074000 \
+  usb \
+  -ar 12000 \
+  -ad virtual_card_01 \
+  --host localhost \
+  --port 4575
+```
+
+Run only the Hamlib-compatible endpoint with:
+
+```bash
+ka9q-rigctld hf.local 9999991 7074000 usb --port 4575
+```
+
+## Runtime checks
+
+Inspect the VFO group:
+
+```bash
+ka9q-vfo-group hf_aprs status
+```
+
+Inspect virtual sinks and monitor sources:
+
+```bash
+pactl list sinks short | grep 'vc_hf_aprs_'
+pactl list sources short | grep 'vc_hf_aprs_'
+```
+
+Inspect running processes:
+
+```bash
+pgrep -af 'ka9q-vfo-streamer|ka9q-rigctld|pcmrecord'
+```
+
+Check a configured receiver directly through the shared protocol package:
+
+```bash
+ka9q-radio status \
+  --radio hf.local \
+  --ssrc 9999991 \
+  --seconds 3
+```
+
+For receiver output groups that publish status on a destination multicast group, supply that group and the correct interface instead.
+
+## Validation before committing
+
+```bash
+bash -n scripts/virtual_vfo_streamer.sh
+bash -n src/ka9q_radio_rigctld/resources/virtual_vfo_streamer.sh
+bash -n src/ka9q_radio_rigctld/resources/pcmrecord_to_virtualcard.sh
+
+python -m compileall -q src tests
+python -m pytest
+python -m build
+```
+
+The old local protocol files (`control.py`, `listener.py`, `status.py`, `resolver.py`, `discover.py` and the unfinished `multicast.py`) were removed in version 0.3.0. Their functionality is provided by `ka9q-radio`.

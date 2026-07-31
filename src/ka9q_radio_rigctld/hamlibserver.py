@@ -13,9 +13,9 @@ import threading
 import time
 
 from enum import Enum
-from .listener import Ka9qRadioStatusListener
-from .control import Ka9qRadioControl
-from .status import StatusType
+from ka9qradio import StatusType
+
+from .radio import RadioSession
 from typing import Any
 
 DEFAULT_HAMLIB_HOST = 'localhost'
@@ -264,8 +264,7 @@ class HamlibServer:
     log: logging.Logger
 
     ssrc: int 
-    ka9q_rc: Ka9qRadioControl
-    ka9q_rs: Ka9qRadioStatusListener
+    radio_session: RadioSession
     
     host: str
     port: int
@@ -294,10 +293,9 @@ class HamlibServer:
         self.serverHandlerRunning = False
 
         self.ssrc = ssrc
-        self.ka9q_rc = Ka9qRadioControl(mcast_group)
-        self.ka9q_rs = Ka9qRadioStatusListener(mcast_group, [ssrc])
-        self.ka9q_rs.startHandler()
-        self.log.info("KA9Q Radio Controller & Status Listener processes started.")
+        self.radio_session = RadioSession(mcast_group, ssrc)
+        self.radio_session.start()
+        self.log.info("KA9Q Radio client and status listener started.")
 
         # This is the init state of the "hardware", but should be quickly updated by by
         # direct values read from radio.
@@ -311,7 +309,7 @@ class HamlibServer:
         self.lockModeState = RigLockMode.RIG_LOCK_MODE_OFF.value
         
         # update the VFO with the specified initial Freq and Mode
-        self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
+        self.radio_session.tune(self.freq, self.mode)
 
     def registerSignalHandlers(self):
         signal.signal(signal.SIGINT, self.handle_signal)
@@ -319,35 +317,42 @@ class HamlibServer:
         signal.signal(signal.SIGQUIT, self.handle_signal)
 
     def getStatus(self) -> dict[StatusType, Any] | None:
-        if (len(self.ka9q_rs.status) > 0) and (self.ssrc in self.ka9q_rs.status):
-            return self.ka9q_rs.status[self.ssrc]
-        
-        return None
+        return self.radio_session.latest_status()
+
+    def waitForStatus(self, timeout: float | None = None):
+        return self.radio_session.wait_for_status(timeout)
 
     def getRtpMcastSocket(self):
         s = self.getStatus()
         if (s and (StatusType.OUTPUT_DATA_DEST_SOCKET in s)):
-            return s[StatusType.OUTPUT_DATA_DEST_SOCKET]
+            socket_info = s[StatusType.OUTPUT_DATA_DEST_SOCKET]
+            if isinstance(socket_info, dict) and 'address' in socket_info:
+                return {'addr': socket_info['address'], 'port': socket_info.get('port')}
+            return socket_info
         
         return None
 
     def getFreq(self) -> float:
         # TODO: Do we move this to be updated using Events ?
         # TODO: Need to handle if SSRC not available 
-        self.freq = self.ka9q_rs.status[self.ssrc][StatusType.RADIO_FREQUENCY]
+        status = self.getStatus()
+        if status and StatusType.RADIO_FREQUENCY in status:
+            self.freq = status[StatusType.RADIO_FREQUENCY]
         self.log.debug(f"GetFreq(): [{self.freq}]")
         return self.freq
 
     def setFreq(self, x: float):
         self.freq = x
 
-        self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
+        self.radio_session.tune(self.freq, self.mode)
         self.log.debug(f"SetFreq: [{x}]")
 
     def getMode(self) -> str:
         # TODO: Do we move this to be updated using Events ?
         # TODO: Need to handle if SSRC not available 
-        self.mode = self.ka9q_rs.status[self.ssrc][StatusType.PRESET].upper()
+        status = self.getStatus()
+        if status and StatusType.PRESET in status:
+            self.mode = str(status[StatusType.PRESET]).upper()
         self.log.debug(f"GetMode(): [{self.mode}]")
         return self.mode
 
@@ -355,7 +360,7 @@ class HamlibServer:
         self.mode = mode
         self.bandwidth = bw
 
-        self.ka9q_rc.control_set_frequency(self.freq, self.mode, self.ssrc)
+        self.radio_session.tune(self.freq, self.mode)
         self.log.debug(f"SetMode: [{self.mode}]  Bw: [{self.bandwidth}]")
 
     def bind(self):
@@ -390,8 +395,7 @@ class HamlibServer:
             
     def close(self):
         # Stop our Radio Listener/Controller
-        self.ka9q_rs.stopHandler()
-        self.ka9q_rc.close()
+        self.radio_session.stop()
 
         for client in self.hamlib_clients:
             # Try ensuring all remaining client connections are closed
