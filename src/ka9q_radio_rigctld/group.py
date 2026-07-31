@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import sys
 
+from .lifecycle import GroupLifecycle, LifecycleError
+
 from .config import ConfigError, GroupConfig, load_group_config
 
 DEFAULT_CONFIG_DIR = Path.home() / ".config" / "ka9q-radio" / "vfo_streamer"
@@ -21,6 +23,12 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_CONFIG_DIR,
         help=f"profile directory (default: {DEFAULT_CONFIG_DIR})",
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("shell", "python"),
+        default=os.environ.get("KA9Q_VFO_GROUP_BACKEND", "shell"),
+        help="lifecycle backend (default: shell; env: KA9Q_VFO_GROUP_BACKEND)",
     )
     parser.add_argument("group_or_list", help="group ID or 'list'")
     parser.add_argument(
@@ -85,6 +93,9 @@ def main() -> int:
                 )
             return 0
 
+        if args.backend == "python":
+            return _run_python_backend(config, args.action)
+
         generated = _write_generated_config(config_dir, config)
         environment = os.environ.copy()
         environment["VFO_GROUP_CONFIG_FILE"] = str(generated)
@@ -92,6 +103,10 @@ def main() -> int:
             ["--config-dir", str(config_dir), group_id, args.action],
             environment=environment,
         )
+
+    if args.backend == "python" and legacy_path.is_file():
+        print("ERROR: Python backend requires a YAML profile", file=sys.stderr)
+        return 1
 
     if args.action == "validate":
         if legacy_path.is_file():
@@ -102,6 +117,45 @@ def main() -> int:
         return 1
 
     return _exec_shell(["--config-dir", str(config_dir), group_id, args.action])
+
+
+
+def _run_python_backend(config: GroupConfig, action: str) -> int:
+    lifecycle = GroupLifecycle(config=config)
+    try:
+        if action == "start":
+            state = lifecycle.start()
+            print(f"Started {state.group_id}: {len(state.channels)} channel(s)")
+            return 0
+        if action == "restart":
+            state = lifecycle.restart()
+            print(f"Restarted {state.group_id}: {len(state.channels)} channel(s)")
+            return 0
+        if action == "stop":
+            lifecycle.stop()
+            print(f"Stopped {config.group_id}")
+            return 0
+        if action == "status":
+            _print_python_status(config.group_id, lifecycle.status_rows())
+            return 0
+    except (LifecycleError, RuntimeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    print(f"ERROR: unsupported Python backend action: {action}", file=sys.stderr)
+    return 1
+
+
+def _print_python_status(group_id: str, rows: list[dict[str, object]]) -> None:
+    print()
+    print(f"{group_id} VFO STATUS (python backend)")
+    print()
+    print(f"{'Channel':<12} {'Frequency':>12}  {'Process':<14} {'Sink':<8} {'Rigctld':<14} Status")
+    for row in rows:
+        print(
+            f"{str(row['id']):<12} {int(row['frequency_hz']):>12}  "
+            f"{str(row['process']):<14} {str(row['sink']):<8} "
+            f"{str(row['rigctld']):<14} {row['status']}"
+        )
 
 
 def _exec_shell(arguments: list[str], *, environment: dict[str, str] | None = None) -> int:

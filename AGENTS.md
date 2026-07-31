@@ -41,3 +41,14 @@ python -m build
 - Keep legacy `.conf` support until all deployed profiles have been migrated.
 - Validate examples with `ka9q-vfo-group --config-dir runtime-profiles <group> validate`.
 - Do not move lifecycle behaviour into the YAML loader; configuration and runtime orchestration remain separate during this phase.
+
+## `common_process` scope
+
+`src/common_process` is a local reusable package. Keep it independent of KA9Q,
+PulseAudio, tmux and project-specific configuration. Suitable additions include
+process identity, locks, atomic state, signals and generic readiness probes.
+Radio- or audio-specific lifecycle behaviour belongs in
+`ka9q_radio_rigctld`.
+
+The shell group backend remains the compatibility baseline until the Python
+backend has completed real start/status/restart/stop and failure-recovery tests.

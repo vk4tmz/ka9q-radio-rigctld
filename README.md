@@ -142,3 +142,38 @@ ka9q-vfo-group hf_aprs start
 Examples are provided under `examples/vfo-streamer/`, and ready-to-copy active
 profiles are under `runtime-profiles/`. Legacy `.conf` profiles remain supported
 when no YAML profile exists.
+
+## Experimental Python lifecycle backend
+
+Version 0.5.0 adds an opt-in Python implementation of the VFO group lifecycle.
+The existing shell controller remains the default while the new implementation
+is exercised on real workloads.
+
+```bash
+ka9q-vfo-group --backend python hf_aprs start
+ka9q-vfo-group --backend python hf_aprs status
+ka9q-vfo-group --backend python hf_aprs stop
+```
+
+The backend may also be selected for a shell or tmux session:
+
+```bash
+export KA9Q_VFO_GROUP_BACKEND=python
+```
+
+The Python backend stores operational state under:
+
+```text
+~/.local/state/ka9q-radio/vfo_streamer/<group>/
+```
+
+Before the first Python-backend start, stop any group managed by the legacy
+shell backend. The two backends intentionally do not trust or reuse each
+other's PID/state files.
+
+### Local reusable process package
+
+The repository now contains `common_process`, a deliberately narrow package
+providing advisory locks, atomic JSON state, process identity verification,
+safe process-group shutdown and TCP readiness checks. It remains local to this
+repository until its API has been proven by multiple real consumers.

@@ -75,3 +75,32 @@ private compatibility profile for the existing shell lifecycle controller.
 
 This intentionally separates configuration migration from lifecycle rewriting.
 A later phase can replace the shell controller without changing the YAML schema.
+
+## Process supervision boundary
+
+The opt-in Python group backend separates generic process supervision from
+radio-specific orchestration:
+
+```text
+ka9q-vfo-group
+    |
+    +-- YAML/profile and PulseAudio orchestration (ka9q_radio_rigctld)
+    |
+    +-- locking, process state and safe shutdown (common_process)
+```
+
+`common_process` contains no KA9Q, PulseAudio, APRS or HFDL concepts. The
+package is intentionally kept inside this repository while its API is tested
+against the VFO lifecycle. A later extraction should happen only after another
+independent project adopts the same primitives without radio-specific changes.
+
+The Python backend writes one group state document plus one identity document
+per child process under:
+
+```text
+~/.local/state/ka9q-radio/vfo_streamer/<group>/
+```
+
+A process identity includes the PID, Linux `/proc` start-time ticks and the
+observed command line. This prevents a stale state file from terminating an
+unrelated process after PID reuse.

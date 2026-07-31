@@ -163,3 +163,40 @@ cp runtime-profiles/vara_hf/vara_hf.yaml \
 
 Keep the previous `.conf` files until each YAML profile has passed `validate`,
 `start`, `status`, `restart`, and `stop`. YAML takes precedence automatically.
+
+## Trialling the Python lifecycle backend
+
+The shell backend remains the default in version 0.5.0. Perform the first trial
+from a clean shell-managed state:
+
+```bash
+ka9q-vfo-group hf_aprs stop
+ka9q-vfo-group --backend python hf_aprs start
+ka9q-vfo-group --backend python hf_aprs status
+```
+
+Expected status columns include the process, sink, rigctld port and aggregate
+state. Possible states are `RUNNING`, `DEGRADED`, `STOPPED`, `STALE` and
+`DISABLED`.
+
+Stop the Python-managed group with the same backend:
+
+```bash
+ka9q-vfo-group --backend python hf_aprs stop
+```
+
+To make the Python backend active for a tmux session:
+
+```bash
+export KA9Q_VFO_GROUP_BACKEND=python
+ka9q-vfo-group hf_aprs start
+```
+
+Runtime state and logs are stored under:
+
+```text
+~/.local/state/ka9q-radio/vfo_streamer/hf_aprs/
+```
+
+During the migration period, do not start the same group concurrently with the
+shell and Python backends. They use separate state formats by design.

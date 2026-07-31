@@ -19,3 +19,13 @@
 - Added enabled/disabled channel support.
 - Retained legacy `.conf` fallback during migration.
 - Added current HF APRS and VARA HF YAML examples and ready-to-copy runtime profiles.
+
+## 0.5.0 - 2026-08-01
+
+- Added the local `common_process` package for reusable Linux process supervision.
+- Added advisory file locks, atomic JSON state, PID/start-time identity checks,
+  safe process-group termination, and TCP readiness helpers.
+- Added an opt-in Python VFO group lifecycle backend.
+- Added structured group runtime state under `~/.local/state/ka9q-radio/vfo_streamer`.
+- Added richer RUNNING, DEGRADED, STOPPED, STALE and DISABLED status reporting.
+- Kept the existing shell backend as the default during migration.
