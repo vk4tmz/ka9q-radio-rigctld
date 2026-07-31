@@ -1,3 +1,7 @@
+# LEGACY SHELL PROFILE
+# YAML is preferred. This file remains during the transition and is
+# used only when no <group>.yaml or <group>.yml profile exists.
+
 ############################################################
 # VIRUTAL VFO GROUP CONFIGURATION
 ############################################################

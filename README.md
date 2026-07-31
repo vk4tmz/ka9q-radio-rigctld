@@ -129,3 +129,16 @@ The streaming runtime uses the packaged `pcmrecord`/SoX helper and does not requ
 ```bash
 python -m pip install -e '~/tools/ka9q-radio-rigctld[audio-tools]'
 ```
+
+## Validated YAML profiles
+
+YAML is the preferred VFO group format:
+
+```bash
+ka9q-vfo-group hf_aprs validate
+ka9q-vfo-group hf_aprs start
+```
+
+Examples are provided under `examples/vfo-streamer/`, and ready-to-copy active
+profiles are under `runtime-profiles/`. Legacy `.conf` profiles remain supported
+when no YAML profile exists.

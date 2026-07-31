@@ -127,3 +127,39 @@ python -m build
 ```
 
 The old local protocol files (`control.py`, `listener.py`, `status.py`, `resolver.py`, `discover.py` and the unfinished `multicast.py`) were removed in version 0.3.0. Their functionality is provided by `ka9q-radio`.
+
+## YAML group profiles
+
+YAML is now the preferred group configuration format. Profiles are stored at:
+
+```text
+~/.config/ka9q-radio/vfo_streamer/<group>/<group>.yaml
+```
+
+Validate before starting:
+
+```bash
+ka9q-vfo-group hf_aprs validate
+ka9q-vfo-group vara_hf validate
+```
+
+The controller prefers `.yaml`, then `.yml`, and falls back to the legacy
+`<group>.conf` only when no YAML profile exists. The current shell lifecycle
+controller remains in place during this transition; the Python CLI validates
+YAML and creates a private generated compatibility file in the group directory.
+
+Install the supplied profiles:
+
+```bash
+mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
+mkdir -p ~/.config/ka9q-radio/vfo_streamer/vara_hf
+
+cp runtime-profiles/hf_aprs/hf_aprs.yaml \
+  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.yaml
+
+cp runtime-profiles/vara_hf/vara_hf.yaml \
+  ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.yaml
+```
+
+Keep the previous `.conf` files until each YAML profile has passed `validate`,
+`start`, `status`, `restart`, and `stop`. YAML takes precedence automatically.

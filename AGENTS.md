@@ -34,3 +34,10 @@ python -m build
 
 - `hf_aprs.conf.example`: 7048.600 kHz LSB and 10147.600 kHz USB.
 - `vara_hf.conf.example`: experimental/background VARA HF channels.
+
+## VFO group configuration
+
+- YAML is the preferred profile format: `<group>/<group>.yaml`.
+- Keep legacy `.conf` support until all deployed profiles have been migrated.
+- Validate examples with `ka9q-vfo-group --config-dir runtime-profiles <group> validate`.
+- Do not move lifecycle behaviour into the YAML loader; configuration and runtime orchestration remain separate during this phase.

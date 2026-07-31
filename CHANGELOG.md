@@ -11,3 +11,11 @@
 - Removed unused direct `psutil` and `zeroconf` dependencies.
 - Updated architecture, operations and repository-agent documentation.
 - Removed stale migration paths and committed runtime/build artifacts.
+
+## 0.4.0 - 2026-08-01
+
+- Added validated YAML VFO group profiles.
+- Added `ka9q-vfo-group <group> validate`.
+- Added enabled/disabled channel support.
+- Retained legacy `.conf` fallback during migration.
+- Added current HF APRS and VARA HF YAML examples and ready-to-copy runtime profiles.

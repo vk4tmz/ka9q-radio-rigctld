@@ -4,12 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ka9q-radio-rigctld"
-version = "0.3.0"
+version = "0.4.0"
 description = "KA9Q Radio VFO audio streamer and Hamlib-compatible rigctld server"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "ka9q-radio>=0.1.0",
+  "PyYAML>=6.0",
 ]
 
 [project.optional-dependencies]

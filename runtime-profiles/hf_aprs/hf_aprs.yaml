@@ -1,0 +1,23 @@
+group:
+  id: hf_aprs
+  radio: hf.local
+  sample_rate: 12000
+
+allocation:
+  base_ssrc: 9999991
+  base_port: 4591
+
+channels:
+  # Previously monitored but disabled after extended observation:
+  # 7046, 7047, 7098, 14103 and 14105.
+  - id: "7048"
+    enabled: true
+    frequency_hz: 7048600
+    mode: lsb
+    sink: vc_hf_aprs_7048
+
+  - id: "10147"
+    enabled: true
+    frequency_hz: 10147600
+    mode: usb
+    sink: vc_hf_aprs_10147

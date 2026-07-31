@@ -1,0 +1,33 @@
+group:
+  id: vara_hf
+  radio: hf.local
+  sample_rate: 12000
+
+allocation:
+  base_ssrc: 9999800
+  base_port: 4800
+
+channels:
+  - id: "3595"
+    enabled: true
+    frequency_hz: 3595000
+    mode: usb
+    sink: vc_vara_hf_3595
+
+  - id: "7105"
+    enabled: true
+    frequency_hz: 7105000
+    mode: usb
+    sink: vc_vara_hf_7105
+
+  - id: "10133"
+    enabled: true
+    frequency_hz: 10133000
+    mode: usb
+    sink: vc_vara_hf_10133
+
+  - id: "14105"
+    enabled: true
+    frequency_hz: 14105000
+    mode: usb
+    sink: vc_vara_hf_14105

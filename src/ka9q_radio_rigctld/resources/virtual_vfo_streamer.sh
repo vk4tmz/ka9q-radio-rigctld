@@ -260,7 +260,7 @@ validate_arguments()
 
     GROUP_DIR="${STREAMER_CFG_DIR}/${GROUP_ID}"
 
-    GROUP_CONFIG_FILE="${GROUP_DIR}/${GROUP_ID}.conf"
+    GROUP_CONFIG_FILE="${VFO_GROUP_CONFIG_FILE:-${GROUP_DIR}/${GROUP_ID}.conf}"
 
     LOG_DIR="${GROUP_DIR}/logs"
 

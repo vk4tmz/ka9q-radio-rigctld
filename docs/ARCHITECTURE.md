@@ -65,3 +65,13 @@ Repository examples live in `examples/vfo-streamer/`. Active profiles and runtim
 └── vara_hf/
     └── vara_hf.conf
 ```
+
+## Configuration transition
+
+The installed `ka9q-vfo-group` command owns the configuration contract. It
+loads and validates YAML profiles, filters disabled channels, allocates SSRC and
+rigctld ports deterministically, and translates the validated model into a
+private compatibility profile for the existing shell lifecycle controller.
+
+This intentionally separates configuration migration from lifecycle rewriting.
+A later phase can replace the shell controller without changing the YAML schema.
