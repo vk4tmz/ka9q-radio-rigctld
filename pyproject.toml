@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ka9q-radio-rigctld"
+version = "0.2.0"
+description = "KA9Q Radio VFO audio streamer and Hamlib-compatible rigctld server"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "psutil",
+  "pyaudio",
+  "zeroconf",
+]
+
+[project.scripts]
+ka9q-vfo-streamer = "ka9q_radio_rigctld.ka9q_vfo_streamer:main"
+ka9q-rigctld = "ka9q_radio_rigctld.hamlibserver:main"
+ka9q-vfo-group = "ka9q_radio_rigctld.group:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ka9q_radio_rigctld = ["resources/*.sh"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

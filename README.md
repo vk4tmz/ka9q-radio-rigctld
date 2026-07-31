@@ -204,3 +204,31 @@ scripts/virtual_vfo_streamer.sh hf_aprs status
 The script derives the repository path from its own location, so it does not depend on a hard-coded checkout directory.
 
 See `docs/ARCHITECTURE.md` and `docs/OPERATIONS.md` for details.
+
+
+## Installed commands
+
+Install the project into the shared environment:
+
+```bash
+source ~/tools/ka9q-radio/.venv/bin/activate
+python -m pip install -e ~/tools/ka9q-radio-rigctld
+```
+
+The installation provides:
+
+```text
+ka9q-vfo-streamer   Start one VFO/audio stream and Hamlib endpoint
+ka9q-rigctld        Start the Hamlib-compatible controller only
+ka9q-vfo-group      Start, stop, restart or inspect configured VFO groups
+```
+
+Examples:
+
+```bash
+ka9q-vfo-group hf_aprs start
+ka9q-vfo-group hf_aprs status
+ka9q-vfo-streamer hf.local 9999991 7074000 usb -ar 12000 -ad virtual_card_01 --port 4575
+```
+
+The root-level Python files remain as compatibility wrappers during the transition. New automation should use the installed commands.

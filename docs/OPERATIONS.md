@@ -73,3 +73,16 @@ python -m pytest
 ## Known pre-existing issue
 
 `multicast.py` is an unfinished experimental file and currently contains invalid Python syntax. Phase 1 does not modify or depend on it. It should be removed or repaired during the later Python refactor.
+
+
+## Installed-command operation
+
+After an editable installation into `~/tools/ka9q-radio/.venv`, use:
+
+```bash
+ka9q-vfo-group hf_aprs start
+ka9q-vfo-group hf_aprs status
+ka9q-vfo-group hf_aprs stop
+```
+
+Tmux launchers should call `ka9q-vfo-group` directly and no longer need a repository working directory.
