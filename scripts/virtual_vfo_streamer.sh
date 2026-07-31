@@ -491,16 +491,18 @@ start_streamers()
 
         info "Starting ${SINK} ${FREQ_HZ}Hz"
 
-        python "$KA9Q_VFO_STREAMER" \
-            "$HOST" \
-            "$CURRENT_SSRC" \
-            "$FREQ_HZ" \
-            "$MODE" \
-            -ar "$RATE" \
-            -ad "$SINK" \
-            --host localhost \
-            --port "$CURRENT_PORT" \
-            > "$LOG_FILE" 2>&1 &
+        (
+            cd "$PROJECT_DIR"
+            python "$KA9Q_VFO_STREAMER" \
+                "$HOST" \
+                "$CURRENT_SSRC" \
+                "$FREQ_HZ" \
+                "$MODE" \
+                -ar "$RATE" \
+                -ad "$SINK" \
+                --host localhost \
+                --port "$CURRENT_PORT"
+        ) > "$LOG_FILE" 2>&1 &
 
 
         local PID=$!
