@@ -24,16 +24,16 @@ command -v ka9q-vfo-group
 
 ```bash
 mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
-cp examples/vfo-streamer/hf_aprs.conf.example \
-  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.conf
+cp examples/vfo-streamer/hf_aprs.yaml.example \
+  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.yaml
 ```
 
 For VARA HF:
 
 ```bash
 mkdir -p ~/.config/ka9q-radio/vfo_streamer/vara_hf
-cp examples/vfo-streamer/vara_hf.conf.example \
-  ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.conf
+cp examples/vfo-streamer/vara_hf.yaml.example \
+  ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.yaml
 ```
 
 ## Group commands
@@ -200,3 +200,8 @@ Runtime state and logs are stored under:
 
 During the migration period, do not start the same group concurrently with the
 shell and Python backends. They use separate state formats by design.
+
+
+## Backend policy
+
+Production tmux launchers currently select the validated Python backend explicitly with `--backend python`. The shell backend remains available only as a temporary rollback path during the consolidation period.
