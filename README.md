@@ -1,11 +1,5 @@
 # Streaming Audio and Controlling KA9Q-Radio Channel Source as if it was its own Radio / VFO
 
-<!-- KA9Q-ECOSYSTEM-LINK:START -->
-> **Part of the [KA9Q ecosystem](https://github.com/vk4tmz/ka9q-ecosystem).**  
-> See the ecosystem repository for the known-compatible component set,
-> installation order, shared runtime conventions, and whole-stack validation.
-<!-- KA9Q-ECOSYSTEM-LINK:END -->
-
 ## Overview
 
 The purpose of this little project was to provide a minimally implemented 'Hamlib Rigctld' server to allow applications such as [WSJTX](https://wsjt.sourceforge.io/wsjtx.html), [JS8Call](https://github.com/js8call/js8call), [FLDigi](https://www.w1hkj.org/) etc to control a single KA9Q-Radio "**Channel**" / "**SSRC**". The script also will start a background "[pcmrecord](https://github.com/ka9q/ka9q-radio/blob/main/docs/utils/pcmrecord.md)" thread to stream the audio to the specified audio output device or in my case sink (ie Virtual Audio Card) to be used by the foremention digital mode decoding applications.

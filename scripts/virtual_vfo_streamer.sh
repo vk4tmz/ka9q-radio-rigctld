@@ -35,8 +35,9 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 if command -v ka9q-vfo-streamer >/dev/null 2>&1; then
     KA9Q_VFO_COMMAND=(ka9q-vfo-streamer)
 else
-    KA9Q_VFO_STREAMER="${PROJECT_DIR}/ka9q_vfo_streamer.py"
-    KA9Q_VFO_COMMAND=(python "$KA9Q_VFO_STREAMER")
+    # Development/source fallback. The historical root wrapper was removed
+    # after packaging, so invoke the package module directly.
+    KA9Q_VFO_COMMAND=(python -m ka9q_radio_rigctld.ka9q_vfo_streamer)
 fi
 
 DEFAULT_STREAMER_CFG_DIR="${HOME}/.config/ka9q-radio/vfo_streamer"

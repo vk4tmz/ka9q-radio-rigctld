@@ -57,7 +57,7 @@ ka9q-vfo-group --config-dir /path/to/profiles hf_aprs status
 The direct script remains available for source-tree debugging only:
 
 ```bash
-scripts/virtual_vfo_streamer.sh hf_aprs status
+scripts/virtual_vfo_streamer.sh hf_aprs status  # compatibility fallback; prefer ka9q-vfo-group
 ```
 
 New tmux launchers and automation should call `ka9q-vfo-group`.
