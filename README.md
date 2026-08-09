@@ -177,9 +177,17 @@ Before the first Python-backend start, stop any group managed by the legacy
 shell backend. The two backends intentionally do not trust or reuse each
 other's PID/state files.
 
-### Local reusable process package
+### Shared process infrastructure
 
-The repository now contains `common_process`, a deliberately narrow package
-providing advisory locks, atomic JSON state, process identity verification,
-safe process-group shutdown and TCP readiness checks. It remains local to this
-repository until its API has been proven by multiple real consumers.
+Generic Linux process supervision and filesystem-safe runtime state now come
+from the sibling `ka9q-common` project. `ka9q-radio-rigctld` consumes
+`ka9q_common.process` for advisory locks, process identity verification, safe
+process-group shutdown and TCP readiness checks, and `ka9q_common.io` for
+atomic JSON state.
+
+For an editable source checkout, install the shared package first:
+
+```bash
+pip install -e ~/tools/ka9q-common
+pip install -e ~/tools/ka9q-radio-rigctld
+```

@@ -86,13 +86,13 @@ ka9q-vfo-group
     |
     +-- YAML/profile and PulseAudio orchestration (ka9q_radio_rigctld)
     |
-    +-- locking, process state and safe shutdown (common_process)
+    +-- locking, process state and safe shutdown (ka9q-common)
 ```
 
-`common_process` contains no KA9Q, PulseAudio, APRS or HFDL concepts. The
-package is intentionally kept inside this repository while its API is tested
-against the VFO lifecycle. A later extraction should happen only after another
-independent project adopts the same primitives without radio-specific changes.
+`ka9q-common` contains the domain-neutral process and state primitives shared
+across the ecosystem. This repository owns only the KA9Q/PulseAudio-specific VFO
+lifecycle built on top of those primitives. Dependency direction is one way:
+`ka9q-common` must not depend on `ka9q-radio-rigctld`.
 
 The Python backend writes one group state document plus one identity document
 per child process under:

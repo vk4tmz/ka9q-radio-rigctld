@@ -1,28 +1,22 @@
-# common_process
+# Shared process infrastructure
 
-`common_process` is a small Linux process-supervision package currently hosted
-inside `ka9q-radio-rigctld` while its API is proven in production.
+The generic process-supervision implementation previously hosted in this
+repository as `common_process` has moved to the sibling `ka9q-common` project.
 
-## Included primitives
+`ka9q-radio-rigctld` now imports:
 
-- `FileLock`: non-blocking advisory file locks using `flock(2)`.
-- `atomic_write_json` / `read_json`: durable JSON state replacement.
-- `ProcessSpec`: immutable launch configuration.
-- `ManagedProcess`: start, inspect and safely stop a process group.
-- `ProcessIdentity`: PID, `/proc` start ticks, command line and process group.
-- `wait_for_tcp`: generic TCP readiness polling.
+- `ka9q_common.process.FileLock` / `LockUnavailable` for non-blocking advisory locks.
+- `ka9q_common.process.ProcessSpec` / `ManagedProcess` and process identity models.
+- `ka9q_common.process.wait_for_tcp` for generic TCP readiness polling.
+- `ka9q_common.io.atomic_write_json` / `read_json` for runtime state.
 
-## Safety properties
+The shared implementation remains deliberately independent of KA9Q,
+PulseAudio, APRS, HFDL and project-specific configuration. Radio- and
+audio-specific lifecycle behaviour remains in `ka9q_radio_rigctld`.
 
-A PID alone is never treated as sufficient process identity. Runtime state also
-records Linux process start ticks and the observed command line. This prevents
-stale state from signalling a different process after PID reuse.
+For editable development checkouts, install `ka9q-common` before this project:
 
-Managed children start in their own process group. Shutdown sends `SIGTERM` to
-the group, waits for a bounded period, then escalates to `SIGKILL` if required.
-
-## Extraction rule
-
-Do not extract this package solely because it looks reusable. Extract it only
-after at least one additional project uses the API without adding radio-,
-audio- or decoder-specific concepts.
+```bash
+pip install -e ~/tools/ka9q-common
+pip install -e ~/tools/ka9q-radio-rigctld
+```

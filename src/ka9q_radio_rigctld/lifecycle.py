@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -9,7 +8,15 @@ import shutil
 import socket
 from typing import Any
 
-from common_process import FileLock, LockUnavailable, ManagedProcess, ProcessSpec, ProcessState, atomic_write_json, read_json
+from ka9q_common.io import atomic_write_json, read_json
+from ka9q_common.process import (
+    FileLock,
+    LockUnavailable,
+    ManagedProcess,
+    ProcessSpec,
+    ProcessState,
+)
+from ka9q_common.time import utc_timestamp
 
 from .config import GroupConfig
 from .pulse import PulseManager, PulseModule
@@ -73,10 +80,6 @@ class GroupRuntimeState:
             modules=tuple(PulseModule.from_dict(item) for item in data.get("modules", [])),
             channels=tuple(ChannelRuntime.from_dict(item) for item in data.get("channels", [])),
         )
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
 
 
 class GroupLifecycle:
@@ -167,7 +170,7 @@ class GroupLifecycle:
                     state = GroupRuntimeState(
                         schema_version=1,
                         group_id=self.config.group_id,
-                        created_at=_utc_now(),
+                        created_at=utc_timestamp(),
                         modules=tuple(modules),
                         channels=tuple(channels),
                     )

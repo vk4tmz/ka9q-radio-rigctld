@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.1 - 2026-08-09
+
+- Moved generic `common_process` implementation to the shared `ka9q-common` project.
+- Updated the Python VFO lifecycle to consume `ka9q_common.process` and `ka9q_common.io`.
+- Reused `ka9q_common.time.utc_timestamp` for group runtime timestamps.
+- Removed the embedded `src/common_process` package and documented the new dependency boundary.
+
 ## 0.3.0 - 2026-08-01
 
 - Replaced duplicated KA9Q control, status, resolver and listener implementations with the shared `ka9q-radio` package.

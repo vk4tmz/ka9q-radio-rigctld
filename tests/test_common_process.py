@@ -6,7 +6,14 @@ import sys
 
 import pytest
 
-from common_process import FileLock, LockUnavailable, ManagedProcess, ProcessSpec, ProcessState, atomic_write_json, read_json
+from ka9q_common.io import atomic_write_json, read_json
+from ka9q_common.process import (
+    FileLock,
+    LockUnavailable,
+    ManagedProcess,
+    ProcessSpec,
+    ProcessState,
+)
 
 
 def test_atomic_json_round_trip(tmp_path: Path) -> None:
