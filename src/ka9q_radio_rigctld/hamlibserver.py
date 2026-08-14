@@ -283,7 +283,8 @@ class HamlibServer:
     lockModeState: int
 
     def __init__(self, mcast_group:str, ssrc: int, freq_hz:int, mode:str, 
-                 host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT):
+                 host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT,
+                 multicast_interface: str | None = None, status_hostip: str | None = None):
         self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))
 
         self.host = host
@@ -293,7 +294,11 @@ class HamlibServer:
         self.serverHandlerRunning = False
 
         self.ssrc = ssrc
-        self.radio_session = RadioSession(mcast_group, ssrc)
+        self.radio_session = RadioSession(
+            mcast_group, ssrc,
+            multicast_interface=multicast_interface,
+            status_interface=status_hostip,
+        )
         self.radio_session.start()
         self.log.info("KA9Q Radio client and status listener started.")
 
@@ -437,6 +442,8 @@ def build_parser():
     parser.add_argument("mode", nargs="?", default=DEFAULT_MODE)
     parser.add_argument("--host", default=DEFAULT_HAMLIB_HOST)
     parser.add_argument("--port", type=int, default=DEFAULT_HAMLIB_PORT)
+    parser.add_argument("--multicast-interface", help="Local IPv4 for KA9Q control multicast; KA9Q_MULTICAST_INTERFACE overrides it.")
+    parser.add_argument("--status-hostip", help="Local IPv4 for KA9Q status reception; KA9Q_STATUS_HOSTIP overrides it.")
     return parser
 
 
@@ -450,6 +457,8 @@ def main(argv=None) -> int:
             mode=args.mode,
             host=args.host,
             port=args.port,
+            multicast_interface=args.multicast_interface,
+            status_hostip=args.status_hostip,
         ).listen()
     except KeyboardInterrupt:
         return 0

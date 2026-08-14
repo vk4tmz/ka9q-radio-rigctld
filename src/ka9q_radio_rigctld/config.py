@@ -28,6 +28,8 @@ class GroupConfig:
     base_ssrc: int
     base_port: int
     channels: tuple[ChannelConfig, ...]
+    multicast_interface: str | None = None
+    status_hostip: str | None = None
 
     @property
     def enabled_channels(self) -> tuple[ChannelConfig, ...]:
@@ -40,6 +42,8 @@ class GroupConfig:
             f"RATE={self.sample_rate}",
             f"BASE_SSRC={self.base_ssrc}",
             f"BASE_PORT={self.base_port}",
+            f'MULTICAST_INTERFACE={_shell_quote(self.multicast_interface or "")}',
+            f'STATUS_HOSTIP={_shell_quote(self.status_hostip or "")}',
             "RADIO_CHANNELS=(",
         ]
         for channel in self.enabled_channels:
@@ -65,6 +69,8 @@ def load_group_config(path: str | Path, *, expected_group_id: str | None = None)
 
     group = _mapping(raw.get("group"), "group")
     allocation = _mapping(raw.get("allocation"), "allocation")
+    network_raw = raw.get("network", {})
+    network = _mapping(network_raw, "network") if network_raw is not None else {}
     channels_raw = raw.get("channels")
     if not isinstance(channels_raw, list) or not channels_raw:
         raise ConfigError("channels must be a non-empty list")
@@ -80,6 +86,8 @@ def load_group_config(path: str | Path, *, expected_group_id: str | None = None)
     sample_rate = _positive_int(group.get("sample_rate"), "group.sample_rate")
     base_ssrc = _positive_int(allocation.get("base_ssrc"), "allocation.base_ssrc")
     base_port = _port(allocation.get("base_port"), "allocation.base_port")
+    multicast_interface = _optional_string(network.get("multicast_interface"), "network.multicast_interface")
+    status_hostip = _optional_string(network.get("status_hostip"), "network.status_hostip")
 
     channels: list[ChannelConfig] = []
     seen_ids: set[str] = set()
@@ -138,6 +146,8 @@ def load_group_config(path: str | Path, *, expected_group_id: str | None = None)
         base_ssrc=base_ssrc,
         base_port=base_port,
         channels=tuple(channels),
+        multicast_interface=multicast_interface,
+        status_hostip=status_hostip,
     )
 
 
@@ -151,6 +161,12 @@ def _string(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigError(f"{field} must be a non-empty string")
     return value.strip()
+
+
+def _optional_string(value: Any, field: str) -> str | None:
+    if value is None:
+        return None
+    return _string(value, field)
 
 
 def _positive_int(value: Any, field: str) -> int:

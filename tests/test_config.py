@@ -76,3 +76,32 @@ channels:
     )
     with pytest.raises(ConfigError, match="must match"):
         load_group_config(profile, expected_group_id="test")
+
+
+def test_optional_network_config_is_loaded_and_exported_to_legacy_shell(tmp_path: Path) -> None:
+    profile = tmp_path / "test.yaml"
+    profile.write_text(
+        """
+group:
+  id: test
+  radio: hf.local
+  sample_rate: 12000
+network:
+  multicast_interface: 192.0.2.10
+  status_hostip: 192.0.2.11
+allocation:
+  base_ssrc: 100
+  base_port: 5000
+channels:
+  - id: one
+    frequency_hz: 1000000
+    mode: usb
+""",
+        encoding="utf-8",
+    )
+    config = load_group_config(profile, expected_group_id="test")
+    assert config.multicast_interface == "192.0.2.10"
+    assert config.status_hostip == "192.0.2.11"
+    generated = config.to_legacy_shell()
+    assert "MULTICAST_INTERFACE='192.0.2.10'" in generated
+    assert "STATUS_HOSTIP='192.0.2.11'" in generated

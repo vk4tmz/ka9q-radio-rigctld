@@ -1,5 +1,10 @@
 ## Unreleased
 
+- Added host-network override support consistent with `ka9q-common`: `KA9Q_MULTICAST_INTERFACE` overrides control multicast interface values and `KA9Q_STATUS_HOSTIP` overrides status receive values.
+- Added optional `network.multicast_interface` and `network.status_hostip` YAML fields plus matching CLI options. Environment overrides are logged explicitly.
+- Added project-level tests covering configured values, ENV overrides, generic multicast inheritance for status, YAML forwarding, and CLI parsing.
+- `KA9Q_RTP_HOSTIP` is intentionally not consumed here because rigctld receives radiod RTP through `pcmrecord`; it does not transmit/replay RTP.
+
 - Hardened VFO audio lifecycle: `ka9q-vfo-streamer` now restarts a failed audio helper with bounded backoff, and shell `ka9q-vfo-group status` reports `DEGRADED` when the helper is dead or missing instead of trusting only the parent PID.
 
 # Changelog

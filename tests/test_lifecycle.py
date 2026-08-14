@@ -41,3 +41,25 @@ def test_disabled_channels_appear_in_status(tmp_path: Path) -> None:
     rows = lifecycle.status_rows()
     assert rows[0]["status"] == "STOPPED"
     assert rows[1]["status"] == "DISABLED"
+
+
+def test_streamer_command_forwards_yaml_network_values(tmp_path: Path) -> None:
+    config = GroupConfig(
+        group_id="test",
+        radio="hf.local",
+        sample_rate=12000,
+        base_ssrc=100,
+        base_port=4500,
+        channels=(ChannelConfig("one", 7000000, "usb", True, "vc_test_one"),),
+        multicast_interface="192.0.2.10",
+        status_hostip="192.0.2.11",
+    )
+    lifecycle = GroupLifecycle(
+        config=config, state_root=tmp_path, pulse=FakePulse(), streamer_command="ka9q-vfo-streamer"
+    )
+    runtime = lifecycle._channel_runtime(0, config.enabled_channels[0])
+    command = list(lifecycle._process(runtime).spec.command)
+    assert command[-4:] == [
+        "--multicast-interface", "192.0.2.10",
+        "--status-hostip", "192.0.2.11",
+    ]

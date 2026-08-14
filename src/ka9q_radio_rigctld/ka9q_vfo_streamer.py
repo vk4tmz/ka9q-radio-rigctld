@@ -41,7 +41,8 @@ class Ka9qVfoStreamer():
 
     def __init__(self, mcast_group:str, ssrc: int, freq_hz:int, mode:str, 
                  audio_device:str, audio_rate:int, 
-                 host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT) -> None:
+                 host:str=DEFAULT_HAMLIB_HOST, port:int=DEFAULT_HAMLIB_PORT,
+                 multicast_interface: str | None = None, status_hostip: str | None = None) -> None:
         
         self.log = logging.getLogger("%s.%s" % (__name__, self.__class__.__name__))        
 
@@ -52,7 +53,11 @@ class Ka9qVfoStreamer():
         self.audioProcess = None
 
         #1. Start the HamlibServer, this will sset the initial Frequency, Mode for the specifed SSRC to ensure it exists before trying to start Audio Stream
-        self.hls = HamlibServer(mcast_group=mcast_group, ssrc=ssrc, freq_hz=freq_hz, mode=mode, host=host, port=port)
+        self.hls = HamlibServer(
+            mcast_group=mcast_group, ssrc=ssrc, freq_hz=freq_hz, mode=mode,
+            host=host, port=port, multicast_interface=multicast_interface,
+            status_hostip=status_hostip,
+        )
 
         # Register our handlers
         self.registerSignalHandlers()
@@ -235,6 +240,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("-ar", "--audio-rate", type=int, default=12000, choices=[11025, 12000, 22050, 44100, 48000], help="Audio sampling rate.")
     parser.add_argument("--host", type=str, default=DEFAULT_HAMLIB_HOST, help="Host/IP on which to bind the Hamlib server.")
     parser.add_argument("--port", type=int, default=DEFAULT_HAMLIB_PORT, help="Port on which to bind the Hamlib server.")
+    parser.add_argument("--multicast-interface", help="Local IPv4 for KA9Q control multicast; KA9Q_MULTICAST_INTERFACE overrides it.")
+    parser.add_argument("--status-hostip", help="Local IPv4 for KA9Q status reception; KA9Q_STATUS_HOSTIP overrides it.")
     return parser
 
 
@@ -252,6 +259,8 @@ def main(argv: list[str] | None = None) -> int:
         audio_rate=args.audio_rate,
         host=args.host,
         port=args.port,
+        multicast_interface=args.multicast_interface,
+        status_hostip=args.status_hostip,
     )
     return 0
 

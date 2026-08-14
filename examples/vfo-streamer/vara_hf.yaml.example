@@ -3,6 +3,12 @@ group:
   radio: hf.local
   sample_rate: 12000
 
+# Optional host-local network settings. Environment variables override these:
+# KA9Q_MULTICAST_INTERFACE and KA9Q_STATUS_HOSTIP.
+# network:
+#   multicast_interface: 192.168.20.10
+#   status_hostip: 192.168.20.10
+
 allocation:
   base_ssrc: 9999800
   base_port: 4800

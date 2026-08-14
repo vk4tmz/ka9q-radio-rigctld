@@ -500,6 +500,10 @@ start_streamers()
 
         info "Starting ${SINK} ${FREQ_HZ}Hz"
 
+        local NETWORK_ARGS=()
+        [[ -n "${MULTICAST_INTERFACE:-}" ]] && NETWORK_ARGS+=(--multicast-interface "$MULTICAST_INTERFACE")
+        [[ -n "${STATUS_HOSTIP:-}" ]] && NETWORK_ARGS+=(--status-hostip "$STATUS_HOSTIP")
+
         "${KA9Q_VFO_COMMAND[@]}" \
             "$HOST" \
             "$CURRENT_SSRC" \
@@ -509,6 +513,7 @@ start_streamers()
             -ad "$SINK" \
             --host localhost \
             --port "$CURRENT_PORT" \
+            "${NETWORK_ARGS[@]}" \
             > "$LOG_FILE" 2>&1 &
 
 

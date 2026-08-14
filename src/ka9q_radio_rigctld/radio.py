@@ -5,6 +5,7 @@ import threading
 import time
 from typing import Any
 
+from ka9q_common.network import resolve_multicast_interface, resolve_status_hostip
 from ka9qradio import Ka9qRadioClient, ReceiverConfig, StatusListener, StatusType
 
 
@@ -16,17 +17,24 @@ class RadioSession:
         radio: str,
         ssrc: int,
         *,
-        status_interface: str = "0.0.0.0",
+        multicast_interface: str | None = None,
+        status_interface: str | None = None,
         status_poll_seconds: float = 0.5,
     ) -> None:
         self.log = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self.radio = radio
         self.ssrc = ssrc
         self.status_poll_seconds = status_poll_seconds
-        self.client = Ka9qRadioClient(radio)
+        self.multicast_interface = resolve_multicast_interface(
+            cli=multicast_interface, logger=self.log
+        ).value
+        self.status_interface = resolve_status_hostip(
+            cli=status_interface, default="0.0.0.0", logger=self.log
+        ).value or "0.0.0.0"
+        self.client = Ka9qRadioClient(radio, interface=self.multicast_interface)
         self.listener = StatusListener(
             radio,
-            interface=status_interface,
+            interface=self.status_interface,
             timeout=min(0.2, status_poll_seconds),
         )
         self.status: dict[int, dict[StatusType | int, Any]] = {}

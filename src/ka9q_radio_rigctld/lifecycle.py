@@ -128,6 +128,10 @@ class GroupLifecycle:
             "--port",
             str(runtime.port),
         ]
+        if self.config.multicast_interface:
+            command.extend(["--multicast-interface", self.config.multicast_interface])
+        if self.config.status_hostip:
+            command.extend(["--status-hostip", self.config.status_hostip])
         return ManagedProcess(
             spec=ProcessSpec.create(
                 name=f"{self.config.group_id}:{runtime.id}",

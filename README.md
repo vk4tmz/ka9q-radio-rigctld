@@ -136,6 +136,32 @@ The streaming runtime uses the packaged `pcmrecord`/SoX helper and does not requ
 python -m pip install -e '~/tools/ka9q-radio-rigctld[audio-tools]'
 ```
 
+## Host network overrides
+
+The VFO/rigctld path follows the shared KA9Q host-network precedence contract:
+
+```text
+ENV override > CLI > YAML/config > default
+```
+
+Supported here:
+
+- `KA9Q_MULTICAST_INTERFACE` overrides `--multicast-interface` and YAML `network.multicast_interface` for KA9Q control/tune multicast.
+- `KA9Q_STATUS_HOSTIP` overrides `--status-hostip` and YAML `network.status_hostip` for KA9Q status reception. If the status-specific variable is unset, `KA9Q_MULTICAST_INTERFACE` is inherited.
+- Empty environment variables are ignored. Active environment overrides are logged explicitly, including the configured value they replace.
+
+`KA9Q_RTP_HOSTIP` is not used by this project because the VFO streamer receives radiod RTP through `pcmrecord`; it does not transmit or replay RTP.
+
+Optional YAML example:
+
+```yaml
+network:
+  multicast_interface: 192.168.20.10
+  status_hostip: 192.168.20.10
+```
+
+Existing profiles without a `network` section remain valid.
+
 ## Validated YAML profiles
 
 YAML is the preferred VFO group format:
