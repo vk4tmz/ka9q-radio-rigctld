@@ -63,3 +63,37 @@ def test_streamer_command_forwards_yaml_network_values(tmp_path: Path) -> None:
         "--multicast-interface", "192.0.2.10",
         "--status-hostip", "192.0.2.11",
     ]
+
+
+def test_python_status_requires_audio_helper(monkeypatch, tmp_path: Path) -> None:
+    config = GroupConfig(
+        group_id="test",
+        radio="hf.local",
+        sample_rate=12000,
+        base_ssrc=100,
+        base_port=4500,
+        channels=(ChannelConfig("one", 7000000, "usb", True, "vc_test_one"),),
+    )
+    lifecycle = GroupLifecycle(config=config, state_root=tmp_path, pulse=FakePulse())
+    runtime = lifecycle._channel_runtime(0, config.enabled_channels[0])
+
+    from ka9q_common.process import ProcessIdentity, ProcessSnapshot, ProcessState
+    import ka9q_radio_rigctld.lifecycle as lifecycle_module
+
+    identity = ProcessIdentity(pid=1234, start_ticks=1, command=("streamer",), pgid=1234, started_at="now")
+    class FakeProcess:
+        def status(self):
+            return ProcessSnapshot(ProcessState.RUNNING, identity)
+
+    monkeypatch.setattr(lifecycle, "_process", lambda _runtime: FakeProcess())
+    lifecycle.pulse.modules.append(PulseModule(sink=runtime.sink, frequency_hz=runtime.frequency_hz, module_id=100))
+    monkeypatch.setattr(lifecycle_module, "_tcp_open", lambda host, port: True)
+    monkeypatch.setattr(lifecycle_module, "_audio_helper_alive", lambda pid: False)
+    rows = lifecycle.status_rows()
+    assert rows[0]["audio"] == "DEAD"
+    assert rows[0]["status"] == "DEGRADED"
+
+    monkeypatch.setattr(lifecycle_module, "_audio_helper_alive", lambda pid: True)
+    rows = lifecycle.status_rows()
+    assert rows[0]["audio"] == "OK"
+    assert rows[0]["status"] == "RUNNING"

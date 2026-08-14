@@ -149,12 +149,12 @@ def _print_python_status(group_id: str, rows: list[dict[str, object]]) -> None:
     print()
     print(f"{group_id} VFO STATUS (python backend)")
     print()
-    print(f"{'Channel':<12} {'Frequency':>12}  {'Process':<14} {'Sink':<8} {'Rigctld':<14} Status")
+    print(f"{'Channel':<12} {'Frequency':>12}  {'Process':<14} {'Sink':<8} {'Rigctld':<14} {'Audio':<6} Status")
     for row in rows:
         print(
             f"{str(row['id']):<12} {int(row['frequency_hz']):>12}  "
             f"{str(row['process']):<14} {str(row['sink']):<8} "
-            f"{str(row['rigctld']):<14} {row['status']}"
+            f"{str(row['rigctld']):<14} {str(row.get('audio', '-')):<6} {row['status']}"
         )
 
 

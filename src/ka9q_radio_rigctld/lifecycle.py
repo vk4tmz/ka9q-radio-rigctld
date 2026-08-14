@@ -22,6 +22,24 @@ from .config import GroupConfig
 from .pulse import PulseManager, PulseModule
 
 
+def _audio_helper_alive(parent_pid: int) -> bool:
+    """Return True when the VFO streamer currently owns an audio helper child."""
+    children_path = Path(f"/proc/{parent_pid}/task/{parent_pid}/children")
+    try:
+        child_pids = children_path.read_text(encoding="utf-8").split()
+    except OSError:
+        return False
+    for child_pid in child_pids:
+        try:
+            cmdline = Path(f"/proc/{child_pid}/cmdline").read_bytes().replace(b"\0", b" ").decode("utf-8", "replace")
+            comm = Path(f"/proc/{child_pid}/comm").read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if "pcmrecord_to_virtualcard" in cmdline or comm.startswith("pcmrecord_to_vi"):
+            return True
+    return False
+
+
 class LifecycleError(RuntimeError):
     pass
 
@@ -231,7 +249,12 @@ class GroupLifecycle:
             snapshot = self._process(runtime).status()
             sink_ok = runtime.sink in sinks
             port_ok = _tcp_open("127.0.0.1", runtime.port)
-            if snapshot.state is ProcessState.RUNNING and sink_ok and port_ok:
+            audio_ok = bool(
+                snapshot.state is ProcessState.RUNNING
+                and snapshot.identity is not None
+                and _audio_helper_alive(snapshot.identity.pid)
+            )
+            if snapshot.state is ProcessState.RUNNING and sink_ok and port_ok and audio_ok:
                 overall = "RUNNING"
             elif snapshot.state is ProcessState.STOPPED and not sink_ok and not port_ok:
                 overall = "STOPPED"
@@ -245,6 +268,7 @@ class GroupLifecycle:
                 "process": f"PID {snapshot.identity.pid}" if snapshot.identity and snapshot.state is ProcessState.RUNNING else snapshot.state.value,
                 "sink": "present" if sink_ok else "missing",
                 "rigctld": f":{runtime.port} open" if port_ok else f":{runtime.port} closed",
+                "audio": "OK" if audio_ok else "DEAD",
                 "status": overall,
             })
         return rows

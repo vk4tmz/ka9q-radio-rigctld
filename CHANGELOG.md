@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Python-backend status now verifies the per-streamer audio helper and reports `audio=OK` or `audio=DEAD`; a missing helper makes the channel `DEGRADED`.
+
 - Added host-network override support consistent with `ka9q-common`: `KA9Q_MULTICAST_INTERFACE` overrides control multicast interface values and `KA9Q_STATUS_HOSTIP` overrides status receive values.
 - Added optional `network.multicast_interface` and `network.status_hostip` YAML fields plus matching CLI options. Environment overrides are logged explicitly.
 - Added project-level tests covering configured values, ENV overrides, generic multicast inheritance for status, YAML forwarding, and CLI parsing.
