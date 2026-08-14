@@ -632,6 +632,33 @@ stop_streamers()
 # STATUS
 ###############################################################################
 
+streamer_audio_health()
+{
+    local parent_pid="$1"
+    local found_helper=0
+    local child_pid state cmdline
+
+    while read -r child_pid; do
+        [[ -z "$child_pid" ]] && continue
+        state=$(ps -o stat= -p "$child_pid" 2>/dev/null | awk '{print $1}' || true)
+        cmdline=$(ps -o cmd= -p "$child_pid" 2>/dev/null || true)
+
+        if [[ "$cmdline" == *"pcmrecord_to_virtualcard.sh"* ]]; then
+            found_helper=1
+            if [[ "$state" == Z* ]]; then
+                echo "AUDIO_DEAD"
+                return
+            fi
+            echo "AUDIO_OK"
+            return
+        fi
+    done < <(pgrep -P "$parent_pid" 2>/dev/null || true)
+
+    if [[ $found_helper -eq 0 ]]; then
+        echo "AUDIO_MISSING"
+    fi
+}
+
 show_status()
 {
     echo
@@ -665,7 +692,18 @@ show_status()
         while read -r VC FREQ SSRC PORT PID; do
 
             if kill -0 "$PID" 2>/dev/null; then
-                echo "  VC=${VC} ${FREQ}Hz PID=${PID} RUNNING"
+                AUDIO_HEALTH=$(streamer_audio_health "$PID")
+                case "$AUDIO_HEALTH" in
+                    AUDIO_OK)
+                        echo "  VC=${VC} ${FREQ}Hz PID=${PID} RUNNING audio=OK"
+                        ;;
+                    AUDIO_DEAD)
+                        echo "  VC=${VC} ${FREQ}Hz PID=${PID} DEGRADED audio=DEAD"
+                        ;;
+                    *)
+                        echo "  VC=${VC} ${FREQ}Hz PID=${PID} DEGRADED audio=MISSING"
+                        ;;
+                esac
             else
                 echo "  VC=${VC} ${FREQ}Hz PID=${PID} STOPPED"
             fi

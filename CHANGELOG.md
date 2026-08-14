@@ -1,3 +1,7 @@
+## Unreleased
+
+- Hardened VFO audio lifecycle: `ka9q-vfo-streamer` now restarts a failed audio helper with bounded backoff, and shell `ka9q-vfo-group status` reports `DEGRADED` when the helper is dead or missing instead of trusting only the parent PID.
+
 # Changelog
 
 ## 0.5.1 - 2026-08-09

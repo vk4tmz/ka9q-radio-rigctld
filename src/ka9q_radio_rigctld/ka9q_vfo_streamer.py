@@ -81,8 +81,29 @@ class Ka9qVfoStreamer():
 
 
         self.log.info("Ready....")
+        restart_delay = 1.0
+        max_restart_delay = 10.0
         while self.hls.serverHandlerThread.is_alive():
             time.sleep(0.5)
+            if self.audioProcess is None:
+                self.log.warning("Audio helper missing; restarting audio stream.")
+                self.startAudioStream()
+                continue
+            returncode = self.audioProcess.poll()
+            if returncode is None:
+                restart_delay = 1.0
+                continue
+            self.log.warning(
+                "Audio helper exited with status %s; restarting in %.1fs.",
+                returncode,
+                restart_delay,
+            )
+            self.audioProcess = None
+            time.sleep(restart_delay)
+            if not self.hls.serverHandlerThread.is_alive():
+                break
+            self.startAudioStream()
+            restart_delay = min(max_restart_delay, restart_delay * 2.0)
 
     def startAudioStream(self):
 

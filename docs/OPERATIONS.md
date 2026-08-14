@@ -205,3 +205,18 @@ shell and Python backends. They use separate state formats by design.
 ## Backend policy
 
 Production tmux launchers currently select the validated Python backend explicitly with `--backend python`. The shell backend remains available only as a temporary rollback path during the consolidation period.
+
+
+### Audio-helper recovery
+
+`ka9q-vfo-streamer` supervises the `pcmrecord_to_virtualcard.sh` helper. If the helper exits (for example while the upstream radiod RTP source is unavailable), the streamer retries it with bounded backoff while the Hamlib/VFO process remains healthy.
+
+The shell backend status command now verifies that helper independently:
+
+```text
+VC=7048 7048600Hz PID=1234 RUNNING audio=OK
+VC=7048 7048600Hz PID=1234 DEGRADED audio=DEAD
+VC=7048 7048600Hz PID=1234 DEGRADED audio=MISSING
+```
+
+`start` and `restart` first stop the group processes recorded in the PID state file and unload the group's recorded virtual sinks, then recreate the sinks and streamers. This is the normal cleanup/recovery operation after a radiod restart or interrupted audio path.
