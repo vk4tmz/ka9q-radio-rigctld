@@ -1,7 +1,7 @@
 # Streaming Audio and Controlling KA9Q-Radio Channel Source as if it was its own Radio / VFO
 
 <!-- KA9Q-ECOSYSTEM-LINK:START -->
-> **Part of the [KA9Q ecosystem](https://github.com/vk4tmz).**  
+> **Part of the [KA9Q ecosystem](https://github.com/vk4tmz/ka9q-ecosystem).**  
 > See the ecosystem repository for the known-compatible component set,
 > installation order, shared runtime conventions, and whole-stack validation.
 <!-- KA9Q-ECOSYSTEM-LINK:END -->
