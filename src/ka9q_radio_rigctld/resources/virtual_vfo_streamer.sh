@@ -473,6 +473,65 @@ unload_virtual_cards()
 # VFO STREAMER MANAGEMENT
 ###############################################################################
 
+find_streamer_pid_by_ssrc()
+{
+    local target_ssrc="$1"
+    local pid cmdline
+
+    while read -r pid; do
+        [[ -z "$pid" ]] && continue
+        cmdline=$(ps -p "$pid" -o cmd= 2>/dev/null || true)
+        [[ -z "$cmdline" ]] && continue
+
+        if [[ "$cmdline" == *"ka9q-vfo-streamer"* || "$cmdline" == *"ka9q_vfo_streamer.py"* ]]; then
+            if [[ " $cmdline " == *" ${target_ssrc} "* ]]; then
+                echo "$pid"
+                return 0
+            fi
+        fi
+    done < <(pgrep -f 'ka9q-vfo-streamer|ka9q_vfo_streamer.py' 2>/dev/null || true)
+
+    return 1
+}
+
+stop_streamer_pid()
+{
+    local VC="$1"
+    local SSRC="$2"
+    local PID="$3"
+    local CMDLINE
+
+    if ! kill -0 "$PID" 2>/dev/null; then
+        return 0
+    fi
+
+    CMDLINE=$(ps -p "$PID" -o cmd= || true)
+
+    if [[ "$CMDLINE" != *"ka9q_vfo_streamer.py"* && "$CMDLINE" != *"ka9q-vfo-streamer"* ]]; then
+        warn "PID ${PID} is not a ka9q streamer, leaving process untouched"
+        return 1
+    fi
+
+    if [[ " $CMDLINE " != *" ${SSRC} "* ]]; then
+        warn "PID ${PID} does not match configured SSRC ${SSRC}, leaving process untouched"
+        return 1
+    fi
+
+    kill "$PID"
+
+    for i in {1..20}; do
+        if ! kill -0 "$PID" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.1
+    done
+
+    if kill -0 "$PID" 2>/dev/null; then
+        warn "Force killing PID ${PID}"
+        kill -9 "$PID"
+    fi
+}
+
 start_streamers()
 {
     info "Starting ${GROUP_ID} streamers..."
@@ -554,80 +613,50 @@ start_streamers()
 
 stop_streamers()
 {
-    if [[ ! -f "$PID_FILE" ]]; then
-        info "No VFO PID file found"
-        return
-    fi
-
-    if [[ ! -r "$PID_FILE" ]]; then
-        error "Cannot read VFO PID file: $PID_FILE"
-        exit 1
-    fi
-
-    if [[ ! -s "$PID_FILE" ]]; then
-        rm -f "$PID_FILE"
-        info "Empty VFO PID file removed"
-        return
-    fi
-
-
     info "Stopping ${GROUP_ID} VFO streamers..."
 
+    local -A TRACKED_PIDS=()
+    local VC FREQ_HZ SSRC PORT PID
 
-    while read -r VC FREQ_HZ SSRC PORT PID; do
+    if [[ -f "$PID_FILE" && -r "$PID_FILE" ]]; then
+        while read -r VC FREQ_HZ SSRC PORT PID; do
+            [[ -z "$SSRC" || -z "$PID" ]] && continue
+            TRACKED_PIDS["$SSRC"]="$PID"
+        done < "$PID_FILE"
+    elif [[ -f "$PID_FILE" ]]; then
+        error "Cannot read VFO PID file: $PID_FILE"
+        return 1
+    fi
 
-        [[ -z "$PID" ]] && continue
+    local CURRENT_SSRC=$BASE_SSRC
+    local recovered_pid
 
+    for channel in "${RADIO_CHANNELS[@]}"; do
+        read -r VC FREQ_HZ MODE <<< "$channel"
+        SSRC="$CURRENT_SSRC"
+        PID="${TRACKED_PIDS[$SSRC]:-}"
 
-        info "Stopping VC=${VC} PID=${PID}"
-
-
-        if ! kill -0 "$PID" 2>/dev/null; then
-            warn "PID ${PID} is not running"
-            continue
-        fi
-
-
-        local CMDLINE
-
-        CMDLINE=$(ps -p "$PID" -o cmd= || true)
-
-
-        if [[ "$CMDLINE" != *"ka9q_vfo_streamer.py"* && "$CMDLINE" != *"ka9q-vfo-streamer"* ]]; then
-            warn "PID ${PID} is not a ka9q streamer, leaving process untouched"
-            continue
-        fi
-
-
-        kill "$PID"
-
-
-        for i in {1..20}; do
-
-            if ! kill -0 "$PID" 2>/dev/null; then
-                break
+        if [[ -n "$PID" ]] && kill -0 "$PID" 2>/dev/null; then
+            info "Stopping VC=${VC} SSRC=${SSRC} PID=${PID}"
+            stop_streamer_pid "$VC" "$SSRC" "$PID" || true
+        else
+            if [[ -n "$PID" ]]; then
+                warn "Tracked PID ${PID} for VC=${VC} SSRC=${SSRC} is not running"
             fi
 
-            sleep 0.1
-
-        done
-
-
-        if kill -0 "$PID" 2>/dev/null; then
-
-            warn "Force killing PID ${PID}"
-
-            kill -9 "$PID"
-
+            recovered_pid=$(find_streamer_pid_by_ssrc "$SSRC" || true)
+            if [[ -n "$recovered_pid" ]]; then
+                info "Recovered live streamer VC=${VC} SSRC=${SSRC} PID=${recovered_pid}"
+                stop_streamer_pid "$VC" "$SSRC" "$recovered_pid" || true
+            else
+                info "No live streamer found for VC=${VC} SSRC=${SSRC}"
+            fi
         fi
 
-
-    done < "$PID_FILE"
-
+        CURRENT_SSRC=$((CURRENT_SSRC + 1))
+    done
 
     rm -f "$PID_FILE"
-
-
     info "${GROUP_ID} VFO streamers stopped"
 }
 
