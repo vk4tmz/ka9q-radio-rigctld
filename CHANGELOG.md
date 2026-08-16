@@ -49,3 +49,7 @@
 - Added structured group runtime state under `~/.local/state/ka9q-radio/vfo_streamer`.
 - Added richer RUNNING, DEGRADED, STOPPED, STALE and DISABLED status reporting.
 - Kept the existing shell backend as the default during migration.
+
+## Unreleased
+
+- Remove the HF-APRS-specific VFO group example/runtime profile. `ka9q-hf-aprs` now owns its KA9Q receivers and feeds Dire Wolf directly through stdin; generic VFO/virtual-card support remains available for other consumers.

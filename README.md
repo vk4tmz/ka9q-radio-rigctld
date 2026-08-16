@@ -98,8 +98,8 @@ ka9q-vfo-group      Manage configured groups of virtual VFOs
 Examples:
 
 ```bash
-ka9q-vfo-group hf_aprs start
-ka9q-vfo-group hf_aprs status
+ka9q-vfo-group vara_hf start
+ka9q-vfo-group vara_hf status
 
 ka9q-vfo-streamer \
   hf.local 9999991 7074000 usb \
@@ -167,8 +167,8 @@ Existing profiles without a `network` section remain valid.
 YAML is the preferred VFO group format:
 
 ```bash
-ka9q-vfo-group hf_aprs validate
-ka9q-vfo-group hf_aprs start
+ka9q-vfo-group vara_hf validate
+ka9q-vfo-group vara_hf start
 ```
 
 Examples are provided under `examples/vfo-streamer/`, and ready-to-copy active
@@ -182,9 +182,9 @@ The existing shell controller remains the default while the new implementation
 is exercised on real workloads.
 
 ```bash
-ka9q-vfo-group --backend python hf_aprs start
-ka9q-vfo-group --backend python hf_aprs status
-ka9q-vfo-group --backend python hf_aprs stop
+ka9q-vfo-group --backend python vara_hf start
+ka9q-vfo-group --backend python vara_hf status
+ka9q-vfo-group --backend python vara_hf stop
 ```
 
 The backend may also be selected for a shell or tmux session:

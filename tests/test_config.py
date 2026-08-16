@@ -8,16 +8,6 @@ from ka9q_radio_rigctld.config import ConfigError, load_group_config
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def test_hf_aprs_example_loads() -> None:
-    config = load_group_config(
-        ROOT / "examples/vfo-streamer/hf_aprs.yaml.example",
-        expected_group_id="hf_aprs",
-    )
-    assert [channel.id for channel in config.enabled_channels] == ["7048", "10147"]
-    assert config.base_ssrc == 9999991
-    assert config.base_port == 4591
-
-
 def test_vara_example_loads() -> None:
     config = load_group_config(
         ROOT / "examples/vfo-streamer/vara_hf.yaml.example",

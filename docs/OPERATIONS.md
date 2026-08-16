@@ -23,9 +23,9 @@ command -v ka9q-vfo-group
 ## Install an example profile
 
 ```bash
-mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
-cp examples/vfo-streamer/hf_aprs.yaml.example \
-  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.yaml
+mkdir -p ~/.config/ka9q-radio/vfo_streamer/vara_hf
+cp examples/vfo-streamer/vara_hf.yaml.example \
+  ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.yaml
 ```
 
 For VARA HF:
@@ -42,22 +42,22 @@ Run from any directory after activating the environment:
 
 ```bash
 ka9q-vfo-group list
-ka9q-vfo-group hf_aprs start
-ka9q-vfo-group hf_aprs status
-ka9q-vfo-group hf_aprs restart
-ka9q-vfo-group hf_aprs stop
+ka9q-vfo-group vara_hf start
+ka9q-vfo-group vara_hf status
+ka9q-vfo-group vara_hf restart
+ka9q-vfo-group vara_hf stop
 ```
 
 Use a different profile root when required:
 
 ```bash
-ka9q-vfo-group --config-dir /path/to/profiles hf_aprs status
+ka9q-vfo-group --config-dir /path/to/profiles vara_hf status
 ```
 
 The direct script remains available for source-tree debugging only:
 
 ```bash
-scripts/virtual_vfo_streamer.sh hf_aprs status  # compatibility fallback; prefer ka9q-vfo-group
+scripts/virtual_vfo_streamer.sh vara_hf status  # compatibility fallback; prefer ka9q-vfo-group
 ```
 
 New tmux launchers and automation should call `ka9q-vfo-group`.
@@ -87,14 +87,14 @@ ka9q-rigctld hf.local 9999991 7074000 usb --port 4575
 Inspect the VFO group:
 
 ```bash
-ka9q-vfo-group hf_aprs status
+ka9q-vfo-group vara_hf status
 ```
 
 Inspect virtual sinks and monitor sources:
 
 ```bash
-pactl list sinks short | grep 'vc_hf_aprs_'
-pactl list sources short | grep 'vc_hf_aprs_'
+pactl list sinks short | grep 'vc_vara_hf_'
+pactl list sources short | grep 'vc_vara_hf_'
 ```
 
 Inspect running processes:
@@ -139,7 +139,7 @@ YAML is now the preferred group configuration format. Profiles are stored at:
 Validate before starting:
 
 ```bash
-ka9q-vfo-group hf_aprs validate
+ka9q-vfo-group vara_hf validate
 ka9q-vfo-group vara_hf validate
 ```
 
@@ -151,11 +151,11 @@ YAML and creates a private generated compatibility file in the group directory.
 Install the supplied profiles:
 
 ```bash
-mkdir -p ~/.config/ka9q-radio/vfo_streamer/hf_aprs
+mkdir -p ~/.config/ka9q-radio/vfo_streamer/vara_hf
 mkdir -p ~/.config/ka9q-radio/vfo_streamer/vara_hf
 
-cp runtime-profiles/hf_aprs/hf_aprs.yaml \
-  ~/.config/ka9q-radio/vfo_streamer/hf_aprs/hf_aprs.yaml
+cp runtime-profiles/vara_hf/vara_hf.yaml \
+  ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.yaml
 
 cp runtime-profiles/vara_hf/vara_hf.yaml \
   ~/.config/ka9q-radio/vfo_streamer/vara_hf/vara_hf.yaml
@@ -170,9 +170,9 @@ The shell backend remains the default in version 0.5.0. Perform the first trial
 from a clean shell-managed state:
 
 ```bash
-ka9q-vfo-group hf_aprs stop
-ka9q-vfo-group --backend python hf_aprs start
-ka9q-vfo-group --backend python hf_aprs status
+ka9q-vfo-group vara_hf stop
+ka9q-vfo-group --backend python vara_hf start
+ka9q-vfo-group --backend python vara_hf status
 ```
 
 Expected status columns include the process, sink, rigctld port and aggregate
@@ -182,20 +182,20 @@ state. Possible states are `RUNNING`, `DEGRADED`, `STOPPED`, `STALE` and
 Stop the Python-managed group with the same backend:
 
 ```bash
-ka9q-vfo-group --backend python hf_aprs stop
+ka9q-vfo-group --backend python vara_hf stop
 ```
 
 To make the Python backend active for a tmux session:
 
 ```bash
 export KA9Q_VFO_GROUP_BACKEND=python
-ka9q-vfo-group hf_aprs start
+ka9q-vfo-group vara_hf start
 ```
 
 Runtime state and logs are stored under:
 
 ```text
-~/.local/state/ka9q-radio/vfo_streamer/hf_aprs/
+~/.local/state/ka9q-radio/vfo_streamer/vara_hf/
 ```
 
 During the migration period, do not start the same group concurrently with the

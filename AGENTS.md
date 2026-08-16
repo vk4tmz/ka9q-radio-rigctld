@@ -32,7 +32,7 @@ python -m build
 
 ## Current active examples
 
-- `hf_aprs.conf.example`: 7048.600 kHz LSB and 10147.600 kHz USB.
+- `vara_hf.conf.example`: 7048.600 kHz LSB and 10147.600 kHz USB.
 - `vara_hf.conf.example`: experimental/background VARA HF channels.
 
 ## VFO group configuration

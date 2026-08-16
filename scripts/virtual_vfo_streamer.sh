@@ -16,7 +16,7 @@
 #
 # Examples:
 #   ./virtual_vfo_streamer.sh list
-#   ./virtual_vfo_streamer.sh hf_aprs start
+#   ./virtual_vfo_streamer.sh vara_hf start
 #
 ###############################################################################
 
@@ -773,7 +773,7 @@ usage()
     echo "Example:"
     echo
     echo "  $0 list"
-    echo "  $0 hf_aprs start"
+    echo "  $0 vara_hf start"
     echo
 }
 

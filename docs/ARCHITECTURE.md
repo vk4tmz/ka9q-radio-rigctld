@@ -57,8 +57,8 @@ Repository examples live in `examples/vfo-streamer/`. Active profiles and runtim
 
 ```text
 ~/.config/ka9q-radio/vfo_streamer/
-├── hf_aprs/
-│   ├── hf_aprs.conf
+├── vara_hf/
+│   ├── vara_hf.conf
 │   ├── logs/
 │   ├── vfo_pids.txt
 │   └── virtual_card_module_ids
