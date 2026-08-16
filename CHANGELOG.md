@@ -1,5 +1,7 @@
 ## Unreleased
 
+- Add upstream `pcmrecord --reacquire` to the virtual-card audio helper so grouped VFO consumers such as HF-APRS keep their selected SSRC stream across radiod session rollover/restart.
+
 - Python-backend status now verifies the per-streamer audio helper and reports `audio=OK` or `audio=DEAD`; a missing helper makes the channel `DEGRADED`.
 
 - Added host-network override support consistent with `ka9q-common`: `KA9Q_MULTICAST_INTERFACE` overrides control multicast interface values and `KA9Q_STATUS_HOSTIP` overrides status receive values.

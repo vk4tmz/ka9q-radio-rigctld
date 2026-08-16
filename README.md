@@ -56,13 +56,13 @@ The following example is 40m FT8, which KA9Q-Radio has automatically assigned a 
 To listen to your stream using default system audio you can utilise '[aplay](https://linux.die.net/man/1/aplay)':
 
 ```
-pcmrecord -c -r -S 7074 ft8-pcm.local | aplay -f S16_LE -r 12000 -c 1
+pcmrecord -c -r --reacquire -S 7074 ft8-pcm.local | aplay -f S16_LE -r 12000 -c 1
 ```
 
 To stream this audio to a the newly created pulse virutal audio sink we utilise linux audio utility '[sox](https://linux.die.net/man/1/sox)' to convert from one format to another.  In our case from 12khz S16_LE to pulseaudio:
 
 ```
-pcmrecord -c -r -S 7074 ft8-pcm.local | sox -t raw  -r 12000 -c 1 -b 16 -e signed -L - -t pulseaudio virtual_card_01
+pcmrecord -c -r --reacquire -S 7074 ft8-pcm.local | sox -t raw  -r 12000 -c 1 -b 16 -e signed -L - -t pulseaudio virtual_card_01
 ```
 
 With this running you can now spin up your application of choice (eg WSTJX, JS8Call Fldigi etc) and select the appropriate audio device. 
