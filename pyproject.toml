@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
   "ka9q-common>=0.1.2",
-  "ka9q-radio>=0.1.1",
+  "ka9q-radio-py>=0.1.1",
   "PyYAML>=6.0",
 ]
 
