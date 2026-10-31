@@ -7,7 +7,7 @@ Both `ka9q-radio-py` and this project are installed into the shared environment:
 ```bash
 source ~/tools/ka9q-radio-py/.venv/bin/activate
 
-python -m pip install -e ~/tools/ka9q-radio
+python -m pip install -e ~/tools/ka9q-radio-py
 python -m pip install -e ~/tools/ka9q-radio-rigctld
 ```
 
