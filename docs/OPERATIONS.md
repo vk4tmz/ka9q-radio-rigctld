@@ -2,10 +2,10 @@
 
 ## Install
 
-Both `ka9q-radio` and this project are installed into the shared environment:
+Both `ka9q-radio-py` and this project are installed into the shared environment:
 
 ```bash
-source ~/tools/ka9q-radio/.venv/bin/activate
+source ~/tools/ka9q-radio-py/.venv/bin/activate
 
 python -m pip install -e ~/tools/ka9q-radio
 python -m pip install -e ~/tools/ka9q-radio-rigctld
@@ -14,7 +14,7 @@ python -m pip install -e ~/tools/ka9q-radio-rigctld
 Verify the installed commands:
 
 ```bash
-command -v ka9q-radio
+command -v ka9q-radio-py
 command -v ka9q-vfo-streamer
 command -v ka9q-rigctld
 command -v ka9q-vfo-group
@@ -106,7 +106,7 @@ pgrep -af 'ka9q-vfo-streamer|ka9q-rigctld|pcmrecord'
 Check a configured receiver directly through the shared protocol package:
 
 ```bash
-ka9q-radio status \
+ka9q-radio-py status \
   --radio hf.local \
   --ssrc 9999991 \
   --seconds 3
@@ -126,7 +126,7 @@ python -m pytest
 python -m build
 ```
 
-The old local protocol files (`control.py`, `listener.py`, `status.py`, `resolver.py`, `discover.py` and the unfinished `multicast.py`) were removed in version 0.3.0. Their functionality is provided by `ka9q-radio`.
+The old local protocol files (`control.py`, `listener.py`, `status.py`, `resolver.py`, `discover.py` and the unfinished `multicast.py`) were removed in version 0.3.0. Their functionality is provided by `ka9q-radio-py`.
 
 ## YAML group profiles
 
