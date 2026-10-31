@@ -82,8 +82,8 @@ You can utilise the KA9Q-Radio '[control](https://github.com/ka9q/ka9q-radio/blo
 Install both projects into the shared virtual environment:
 
 ```bash
-source ~/tools/ka9q-radio/.venv/bin/activate
-python -m pip install -e ~/tools/ka9q-radio
+source ~/tools/ka9q-radio-py/.venv/bin/activate
+python -m pip install -e ~/tools/ka9q-radio-py
 python -m pip install -e ~/tools/ka9q-radio-rigctld
 ```
 
@@ -108,7 +108,7 @@ ka9q-vfo-streamer \
 
 ## Shared KA9Q protocol package
 
-This application uses the separate `ka9q-radio` package for multicast control and status handling. It no longer carries local copies of the control encoder, status parser, resolver, discovery code or multicast implementation.
+This application uses the separate `ka9q-radio-py` package for multicast control and status handling. It no longer carries local copies of the control encoder, status parser, resolver, discovery code or multicast implementation.
 
 `ka9q-radio-rigctld` remains responsible for:
 
